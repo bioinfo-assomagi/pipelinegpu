@@ -59,7 +59,7 @@ class Fq2BamPipe(Pipe):
                                 '--volume', "{}/:{}".format(os.path.join(principal_directory, "bam"), config.DOCKER_OUTPUTDIR), 
                                 "{}".format(config.PARABRICKS_VERSION), 
                             'pbrun', 'fq2bam', 
-                            '--ref', "{}/Homo_sapiens_assembly38.fasta".format(config.DOCKER_REFDIR), 
+                            '--ref', "{}/{}".format(config.DOCKER_REFDIR, config.REF_GENOME_NAME), 
                             # '--num-gpus', '1',
                             _input_option,
                             '--out-bam', "{}/{}_final.bam".format(config.DOCKER_OUTPUTDIR, sample_name)]))

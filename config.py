@@ -69,7 +69,9 @@ class CustomConfigParser():
             'DOCKER_REFDIR': self.get('DOCKER', 'REFDIR_VOLUME'),
             'SERVER_EUREGIO': self.get('SERVER', 'EUREGIO'),
             'SERVER_MAGIS': self.get('SERVER', 'MAGIS'),
-            'SERVER_RICERCA': self.get('SERVER', 'RICERCA')
+            'SERVER_RICERCA': self.get('SERVER', 'RICERCA'),
+            'REF_GENOME_NAME': self.get('PARABRICKS', 'REF_GENOME_NAME')
+
             # 'PARABRICKS_INPUTDIR': self.get('PARABRICKS', 'INPUTDIR_NAME')
         }
 
@@ -79,7 +81,7 @@ class CustomConfigParser():
         """Reads and parses the configuration file."""
         cfg = CustomConfigParser(filename=filename)  # update module-level cfg
         globals().update(cfg.configuration)  # update configdir, templatesdir ...
-        # configuration = cfg.configuration          # update module-level configuration
+        #configuration = cfg.configuration          # update module-level configuration
         return cfg
 
 

@@ -188,6 +188,17 @@ def run_coverage_in_parallel(**kwargs):
     
     return queue
 
+
+""" NOTE: principal_directory will be created by the first pipeline, in the setup pipe. This is the place were the files for the current project will be written. 
+    However, keeping track of files do not necessarily requires principal_directory, since in each step of the pipeline, each output is saved in the sample dictionary. 
+    Therefore, a coupling between principal_directory and the files we are working with is introduced, implying that the pipeline should be executed as a whole. 
+    Consider the case where we execute it up to the alignmentpipe. We will have the bam files located inside the bam folder of the principal_directory. Then,
+    if we want to execute the second half of the pipeline (Variant Calling), and put them in a different workplace (i.e. different principal_directory), we will not be able to do so,
+    given the current code. This is because the current code relies on principal_directory as the place where are files can be found. i.e. in our sample E719.2023 we have saved the alignment files
+    inisde 23March/bam/ directory, and they are present in sample["bam"] as 23March/bam/E719.2023_final.bam. If we execute the VariantCalling pipe with sample E719.2023 as an input, and principal
+    _directory 24March, instead of 23March, as an input, we will have an error. Therefore, each step of the pipeline should have one common principal_directory. In our case, we would have to run 
+    the VariantCall Pipe using 23March as the principal_directory.
+"""
 if __name__ == "__main__":
     args = parseInput()
 

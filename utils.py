@@ -46,7 +46,7 @@ def group_samples(fastq_files):
         sample_name = fastq_file.split('/')[-1].split('_')[0]
         
         if sample_name not in sample_dict:
-            sample_dict[sample_name] = {"name": sample_name, "forward": None, "reverse": None}
+            sample_dict[sample_name] = {"name": str(sample_name), "forward": None, "reverse": None}
         
         if 'R1' in fastq_file:
             sample_dict[sample_name]['forward'] = fastq_file

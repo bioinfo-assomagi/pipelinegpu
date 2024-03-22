@@ -1,4 +1,5 @@
 from Pipes.Pipe import Pipe
+from Pipes.ParallelPipe import ParallelPipe
 import os
 
 import config
@@ -184,10 +185,10 @@ class ReadFastQFilesPipe(Pipe):
                 #files_fq = os.system(' '.join(['scp root@192.168.2.188:/sharedfolders/NGS/tmp/analysis/germinal/*', fastq_folder])) #added
                 #files_fq = os.system(' '.join(['s *', fastq_folder]))  # added
                 files_fq = os.system(
-                    ' '.join(['scp root@192.168.1.51:/home/NGS/tmp/analysis/germinalprot/*', fastq_folder]))
+                    ' '.join(['scp root@192.168.1.51:/home/NGS/tmp/analysis/germinal/*', fastq_folder]))
             else:
                 files_fq = os.system(
-                    ' '.join(['scp root@192.168.1.51:/home/NGS/tmp/analysis/germinalprot/*', fastq_folder]))  # added
+                    ' '.join(['scp root@192.168.1.51:/home/NGS/tmp/analysis/germinal/*', fastq_folder]))  # added
             # files_fq = system(' '.join(['scp server@192.168.1.201:/media/4e955bfb-88f0-4cc7-a824-27ee0b4bf6e2/NGS
             # /tmp/analysis/germinal2/*',fastq_folder])) files_fq = system(' '.join(['scp
             # server@192.168.1.201:/media/4e955bfb-88f0-4cc7-a824-27ee0b4bf6e2/NGS/tmp/analysis/somatic1/*',
@@ -296,7 +297,7 @@ class ProcessFastQFilesPipe2(Pipe):
         return processed_files
 
 
-class SetSamplesPipe(Pipe):
+class SetSamplesPipe(ParallelPipe):
 
     def __init__(self) -> None:
         super().__init__()
@@ -315,7 +316,7 @@ class SetSamplesPipe(Pipe):
             {"principal_directory": principal_directory, "fastq_files": fastq_files, "dest": dest, "fastq": fastq,
              "samples_dataframe": df_samples, "thread_id": self.thread_id})
         
-        utils.thread_print(self.thread_id, "SetSamples Pipe finished excecution!")
+        self.thread_print("SetSamples Pipe finished execution!")
         return kwargs
 
     def set_samples(self, principal_directory, fastq_files, dest):
@@ -328,8 +329,6 @@ class SetSamplesPipe(Pipe):
 
             if sample_name not in sample_dict:
                 sample_dict[sample_name] = {'name': sample_name, 'forward': None, 'reverse': None}
-                # TODO: what about threads? each thread will have a different list of samples, with some of the lists
-                #  containing just one of the strands
 
             if 'R1' in fastq_name:
                 sample_dict[sample_name]['forward'] = fastq_file
@@ -342,7 +341,7 @@ class SetSamplesPipe(Pipe):
         df_samples.sort_values(by=['name'], inplace=True)
         df_samples.to_csv(join(principal_directory, "sample_list_{}.csv".format(self.thread_id)), sep='\t', index=False, encoding='utf-8')
 
-        utils.thread_print(self.thread_id, "Samples {} written to: {}".format(sample_dict.keys(), join(principal_directory, "sample_list_{}.csv".format(self.thread_id))))
+        self.thread_print("Samples {} written to: {}".format(sample_dict.keys(), join(principal_directory, "sample_list_{}.csv".format(self.thread_id))))
 
         return df_samples
 
