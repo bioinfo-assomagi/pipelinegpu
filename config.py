@@ -70,7 +70,8 @@ class CustomConfigParser():
             'SERVER_EUREGIO': self.get('SERVER', 'EUREGIO'),
             'SERVER_MAGIS': self.get('SERVER', 'MAGIS'),
             'SERVER_RICERCA': self.get('SERVER', 'RICERCA'),
-            'REF_GENOME_NAME': self.get('PARABRICKS', 'REF_GENOME_NAME')
+            'REF_GENOME_NAME': self.get('PARABRICKS', 'REF_GENOME_NAME'),
+            'BUCHIARTIFICIALI': self.get('FILES', 'BUCHIARTIFICIALI')
 
             # 'PARABRICKS_INPUTDIR': self.get('PARABRICKS', 'INPUTDIR_NAME')
         }

@@ -126,7 +126,7 @@ class CoveragePipe(ParallelPipe):
 
             if not vertical.empty:
                 print('ifnot')
-                buchiartificiali = pd.read_csv(BUCHIARTIFICIALI,sep='\t',header=0)
+                buchiartificiali = pd.read_csv(config.BUCHIARTIFICIALI, sep='\t',header=0)
                 if 'OCULAR' in panel: _vertical_macro=join(path,'bin','VERTICAL','vertical_ONA20509.2020')
                 elif 'VASCULAR' in panel:_vertical_macro=join(path,'bin','VERTICAL','vertical_VASCNA20509.2020')
                 elif 'NEUROLOGY' in panel: _vertical_macro=join(path,'bin','VERTICAL','vertical_NEURNA20509.2020')
