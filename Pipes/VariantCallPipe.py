@@ -37,7 +37,7 @@ class VariantCallPipe(ParallelPipe):
         self.panel = kwargs.pop("panel", None)
 
         print("TESTING VARIANT CALL PIPE: {}".format(samples))
-        self.ParabricksHaplotypeCaller(samples)
+        self.HaplotypeCaller(samples)
         self.DeepVariant(samples)
         self.Filter(samples)
         self.Merge(samples)
@@ -47,7 +47,7 @@ class VariantCallPipe(ParallelPipe):
         return kwargs
     
 
-    def ParabricksHaplotypeCaller(self, samples):
+    def HaplotypeCaller(self, samples):
 
         docker_input_parabricks = os.path.join(config.DOCKER_WORKDIR, 'bam')
 

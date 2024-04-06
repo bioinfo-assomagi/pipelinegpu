@@ -6,6 +6,7 @@ import glob
 import config
 import utils
 import multiprocessing
+import queue
 
 class Fq2BamPipe(Pipe):
 
@@ -24,6 +25,9 @@ class Fq2BamPipe(Pipe):
         if type(resynced_samples) is multiprocessing.queues.Queue:
             print("queue type: {}".format(type(resynced_samples)))
             print("Queue size: {}".format(resynced_samples.qsize()))
+            while resynced_samples.qsize() > 0:
+                resynced_samples_list.append(resynced_samples.get())
+        if type(resynced_samples) is queue.Queue:
             while resynced_samples.qsize() > 0:
                 resynced_samples_list.append(resynced_samples.get())
         

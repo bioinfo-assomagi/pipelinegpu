@@ -48,15 +48,18 @@ class CoveragePipe(ParallelPipe):
         samples = kwargs.pop("samples", None)
         dest = kwargs.pop("dest", None)
         path = kwargs.pop("path")
-        queue = kwargs.pop("queue")
+        queue = kwargs.pop("queue", None)
+        sample_list_start_index = kwargs.pop("sample_list_start_index", None)
+        sample_list_end_index = kwargs.pop("sample_list_end_index", None)
         
         dbsnp = dbsnp144_38 if genome_type == 'geno38' else dbsnp144_37
         genome = genome_dict[genome_type]
         
 
         phenotype = pd.read_csv(input_phenotype, sep='\t', header=0, dtype=str)
-
-        for sample in samples:
+        current_index = sample_list_start_index
+        while current_index < sample_list_end_index:
+            sample = samples[current_index]
             sample_name = str(sample['name'])
             #phenotype['sample'] = phenotype['sample'].astype('str')
             #phenotype['sample'].replace(r'\.202$','.2020',inplace=True,regex=True)
@@ -64,8 +67,10 @@ class CoveragePipe(ParallelPipe):
             genelist = list(phenotype['gene'][phenotype['sample'] == sample_name])
             sospetto = phenotype['malattia'][phenotype['sample'] == sample_name].unique()[0]
           
-            vertical = ''
-            verticalX = ''
+            # vertical = ''
+            # verticalX = ''
+            vertical = pd.DataFrame()
+            verticalX = pd.DataFrame()
             if genome_type == 'geno38':
                 vertical, verticalX, BED = self.cutCDS(genelist, sample, folder_pheno, dest)
             elif genome_type == 'geno37':
@@ -187,13 +192,22 @@ class CoveragePipe(ParallelPipe):
                 count_sex.to_csv(join(principal_directory,'coverage/',sample_name,sample_name+'_final_sex'),sep='\t',index=False)
                 print('to_Csv')
 				
-                #os.system(' '.join(['rm -r',join(folder_to_count)])) # TODO: fix this
-                sample['vertical'] = vertical
-                sample['verticalx'] = verticalX
-                sample['bed'] = BED
-                if queue is not None:
-                    queue.put(sample)
-                    
+                os.system(' '.join(['rm -r',join(folder_to_count)])) # TODO: fix this
+                
+
+            sample['vertical'] = vertical
+            sample['verticalx'] = verticalX
+            sample['bed'] = BED
+            # sample['vertical'] = "dummy_vertical"
+            # sample['verticalx'] = "dummy_verticalX"
+            #sample['bed'] = "dummy_BED"
+            
+            if queue is not None:
+                queue.put(sample)
+            
+            current_index = current_index + 1
+        
+        self.thread_print("Samples = {}".format(samples))
         self.thread_print("Coverage Analysis finished, check bed and vertical files.")
         kwargs.update({"thread_id": self.thread_id, "principal_directory": principal_directory, "panel": panel, "genome": genome_type, "samples": samples, "dest": dest, "path": path, "queue": queue})
         return kwargs

@@ -1,5 +1,6 @@
 import logging
 import config
+import os
 
 def get_db_path(server_id):
     if server_id == 'b':
@@ -61,3 +62,51 @@ def merge_csv(csv_list):
     df_concat = pd.concat([pd.read_csv(f, dtype=str, sep='\t') for f in csv_list], ignore_index=True)
 
     return df_concat
+
+def unwrap_queue(queue):
+    l = []
+    while queue.qsize() > 0:
+        l.append(queue.get())
+            
+    return l
+
+class Sequence:
+
+    def __init__(self, sequence: str, name=None) -> None:
+        self.sequence = sequence
+        self.name = name
+        self.length = len(sequence)
+
+    def remove_common_prefix(self, seq2):
+        commonprefix = os.path.commonprefix([self.sequence, seq2.sequence])
+        
+        
+        noprefix_seq1 = self.sequence[len(commonprefix) : ] 
+        noprefix_seq2 = seq2.sequence[len(commonprefix) : ]
+
+        commonprefix_reverse = os.path.commonprefix([noprefix_seq1[::-1], noprefix_seq2[::-1]])
+        nosuffix_seq1 = noprefix_seq1[: len(noprefix_seq1) - len(commonprefix_reverse)]
+        nosuffix_seq2 = noprefix_seq2[: len(noprefix_seq2) - len(commonprefix_reverse)]
+
+        return {self.name : nosuffix_seq1, seq2.name: nosuffix_seq2}
+
+    def find_indel(self, seq2):
+        start_index = None
+        end_index = None
+
+        for i in range(len(self.sequence)):
+            
+            if start_index == None:
+                if self.sequence[i] != seq2.sequence[i]:
+                    start_index = i
+                if i + 1 >= seq2.length:
+                    start_index = i + 1
+            
+        if end_index == None:
+            if self.sequence[self.length - i - 1] != seq2.sequence[seq2.length - i - 1]:
+                end_index = i
+
+        if start_index is not None and end_index is not None:
+            return {self.name : self.sequence[start_index : self.length - end_index], seq2.name: seq2.sequence[start_index : seq2.length - end_index]}
+
+        

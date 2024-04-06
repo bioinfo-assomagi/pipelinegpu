@@ -3,6 +3,8 @@ import time
 from multiprocessing import Process, Queue
 import sys
 
+import queue as Q
+
 import config
 from PipelineAssembler import PipelineAssembler
 import utils
@@ -157,13 +159,15 @@ def run_in_parallel(num_threads=3, **kwargs):
 
 
 def dummy_function(**kwargs):
-    print("Running thread-{} on files {}".format(kwargs["thread_id"], kwargs["fastq_files"]))
-    
+    print("Running thread-{} on samples {}".format(kwargs["thread_id"], kwargs["samples"]))
+    queue = kwargs.pop("queue")
+    queue.put("thread_id")
 
 # TODO: haplotype caller parabricks. merge the two vcfs. merge haplotype caller vcf with deepvariant vcf. then filter according to the bed
 def run_coverage_in_parallel(**kwargs):
     queue = Queue()
-     
+    thread_pool = []
+
     def get_samples(thread_id, samples, num_threads):
         num_samples_per_thread = math.ceil(len(samples) / num_threads)
         samples_for_thread_id = samples[thread_id * num_samples_per_thread : min((thread_id + 1) * num_samples_per_thread, len(samples))]
@@ -173,20 +177,29 @@ def run_coverage_in_parallel(**kwargs):
     samples = kwargs.pop("samples")
     assert(len(samples) > 0)
     num_threads = len(samples)
-    thread_pool = []
-    
+ 
+    num_samples_per_thread = math.ceil(len(samples) / num_threads)
+    # TODO: pass start, end into coveragepipe.
     for thread_id in range(num_threads):
-        kwargs.update({"samples": get_samples(thread_id, samples, num_threads), "thread_id": thread_id, "queue": queue})
+        kwargs.update({"samples": samples, "sample_list_start_index": thread_id * num_samples_per_thread, "sample_list_end_index": min((thread_id + 1) * num_samples_per_thread, len(samples)), "thread_id": thread_id, "queue": queue})
         p = Process(target=pipelineAssembler.factory('coverage').start, kwargs=kwargs)
+        #p = Process(target=dummy_function, kwargs=kwargs)
         thread_pool.append(p)
+
+    print("Thread_pool size = {}".format(len(thread_pool)))
 
     for p in thread_pool:
         p.start()
 
+    results = []
+    while any(p.is_alive() for p in thread_pool) or not queue.empty():
+        while not queue.empty():
+            results.append(queue.get())
+
     for p in thread_pool:
         p.join()
     
-    return queue
+    return results
 
 
 """ NOTE: principal_directory will be created by the first pipeline, in the setup pipe. This is the place were the files for the current project will be written. 
@@ -213,6 +226,8 @@ if __name__ == "__main__":
   
     start = time.time()
     
+    # TODO: redesign the concurrency, at least for the coverage pipeline. No need to assemble a seperate pipeline, put perform the parallelization inside the CoveragePipe
+
     # TODO: run in parallel maybe should return a set of queues, with the different outputs (written files, directories, etc.) that can be used by the next steps of the pipeline
     # For example, InterstagePipe gets the sample by using glob.glob on the pirnicpal_directory, but it would be better if InterstagePipe reads from the queue
     # so the actual files are passed directly from firstPipe, to interstagePipe, without having to hardcode the name on the files to search with glob
@@ -221,19 +236,43 @@ if __name__ == "__main__":
         sys.exit()
    
     samples_queue = run_in_parallel(num_threads=int(len(fastq_files) / 2), **kwargs)
-    #run_in_parallel(fastq_files=["test/E378.2023_R1_001.fastq", "test/E378.2023_R2_001.fastq", "test/E379.2023_R1_001.fastq", "test/E379.2023_R2_001.fastq", "test/E380.2023_R1_001.fastq", "test/E380.2023_R2_001.fastq"])
-    
-    
+
     print("\033[92mEntering NVIDIA Parabricks ...")
     """ fq2bam will run non-concurrently. fq2bam will start after fastx for each sample is finished"""
     kwargs.update({"resynced_samples": samples_queue})
     fq2bam_out = pipelineAssembler.factory('fq2bam').start(**kwargs)
     print("\033[0m")
-
+    
+    
+    #print("Queue of samples = {}".format(samples_queue.qsize()))
+    #print("FQ2BamOut = {}".format(fq2bam_out))
+    # fq2bam_out = {'quality': 18, 'quality_perc': 97, 'threads': '12', 'memory': '15G', 'bwa': 'bwa', 
+    #  'samtools': 'samtools', 'samstat': 'samstat', 'gatk': '/home/magi/tools/gatk-4.2.0.0/gatk', 
+    #  'bcftools': 'bcftools', 'VEP': '/home/magi/tools/ensembl-vep-release-110/vep', 
+    #  'delete': 'True', 'runfrequency': 'True', 'runcore': 'True', 
+    #  'importAPP': 'True', 'backup': 'True', 'proj_name': '27_Mar_2024', 
+    #  'panel': 'CANCER', 'path': '/home/magi/PROJECT/diagnosys/', 'genome': 'geno38', 'over': True, 
+    #  'fastq_folder': '/home/magi/PROJECT/diagnosys/RESULTS_jurgen/27_Mar_2024_CANCER/fastq/', 
+    #  'fastq': '../RESULT/14_Feb_2024_CANCER/fastq/', 'dest': 'b', 
+    #  'fastq_files': ['/home/magi/PROJECT/diagnosys/RESULTS_jurgen/27_Mar_2024_CANCER/fastq/E719.2023_R2_001.fastq.gz', '/home/magi/PROJECT/diagnosys/RESULTS_jurgen/27_Mar_2024_CANCER/fastq/E719.2023_R1_001.fastq.gz'],
+    #  'db_path': '/home/magi/PROJECT/diagnosys/bin/DATABASE/euregio.db', 'principal_directory': '/home/magi/PROJECT/diagnosys/RESULTS_jurgen/27_Mar_2024_CANCER', 
+    #  'samples': [{'name': 'E719.2023', 'pairs_forward': 'E719.2023_R1_001_new.fastq_pairs_R1.fastq', 'pairs_reverse': 'E719.2023_R2_001_new.fastq_pairs_R2.fastq', 'bam': '/home/magi/PROJECT/diagnosys/RESULTS_jurgen/27_Mar_2024_CANCER/bam/E719.2023_final.bam', 'bai': '/home/magi/PROJECT/diagnosys/RESULTS_jurgen/27_Mar_2024_CANCER/bam/E719.2023_final.bai'}]}
     kwargs = fq2bam_out
-    queue_of_samples = run_coverage_in_parallel(**kwargs)
+    coverage_results = run_coverage_in_parallel(**kwargs) # only the samples list is needed from here, since it is the only property that is udated, everything else is the same
+                                                          # so let's not use a queue, the samples will be edited, and will already be in the current kwargs
+    
+    print("Samples after coverage = {}".format(coverage_results))
+
+    kwargs.update({'samples': coverage_results})
+    
+    pipelineAssembler.factory('variantcall').start(**kwargs)
+      
     #coverage_out = pipelineAssembler.factory('coverage').start(**kwargs)
 
+    
+    
+    #kwargs.update({'samples': utils.unwrap_queue(queue_of_samples)})
+   
     
     
     """ Refactor this. """

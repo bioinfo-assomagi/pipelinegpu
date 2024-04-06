@@ -89,7 +89,7 @@ class CustomConfigParser():
 def update_cfg(section, parameter, value):
     cfg = CustomConfigParser()
     cfg.set(section, parameter, value)
-    #cfg.write() # can be ignored if we don't want to save dynamic config options in the file
+    cfg.write() # can be ignored if we don't want to save dynamic config options in the file
     globals().update({parameter: value})
 
 
