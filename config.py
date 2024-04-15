@@ -71,7 +71,17 @@ class CustomConfigParser():
             'SERVER_MAGIS': self.get('SERVER', 'MAGIS'),
             'SERVER_RICERCA': self.get('SERVER', 'RICERCA'),
             'REF_GENOME_NAME': self.get('PARABRICKS', 'REF_GENOME_NAME'),
-            'BUCHIARTIFICIALI': self.get('FILES', 'BUCHIARTIFICIALI')
+            'BUCHIARTIFICIALI': self.get('FILES', 'BUCHIARTIFICIALI'),
+            'GENO37': self.get('FILES', 'GENO37'),
+            'GENO38': self.get('FILES', 'GENO38'),
+            'EREDITA37': self.get('FILES', 'EREDITA37'),
+            'EREDITA38': self.get('FILES', 'EREDITA38'),
+            'HGMD37': self.get('FILES', 'HGMD37'),
+            'HGMD38': self.get('FILES', 'HGMD38'),
+            'APPRIS': self.get('FILES', 'APPRIS'),
+            'ECCEZIONI': self.get('FILES', 'ECCEZIONI'),
+            'dbNSFP38_gz': self.get('FILES', 'dbNSFP38_gz'),
+            'dbscSNV11_gz': self.get('FILES', 'dbscSNV11_gz')
 
             # 'PARABRICKS_INPUTDIR': self.get('PARABRICKS', 'INPUTDIR_NAME')
         }

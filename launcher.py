@@ -258,7 +258,7 @@ if __name__ == "__main__":
     #  'db_path': '/home/magi/PROJECT/diagnosys/bin/DATABASE/euregio.db', 'principal_directory': '/home/magi/PROJECT/diagnosys/RESULTS_jurgen/27_Mar_2024_CANCER', 
     #  'samples': [{'name': 'E719.2023', 'pairs_forward': 'E719.2023_R1_001_new.fastq_pairs_R1.fastq', 'pairs_reverse': 'E719.2023_R2_001_new.fastq_pairs_R2.fastq', 'bam': '/home/magi/PROJECT/diagnosys/RESULTS_jurgen/27_Mar_2024_CANCER/bam/E719.2023_final.bam', 'bai': '/home/magi/PROJECT/diagnosys/RESULTS_jurgen/27_Mar_2024_CANCER/bam/E719.2023_final.bai'}]}
     kwargs = fq2bam_out
-    coverage_results = run_coverage_in_parallel(**kwargs) # only the samples list is needed from here, since it is the only property that is udated, everything else is the same
+    coverage_results = run_coverage_in_parallel(**kwargs) # only the samples list is needed from here, since it is the only property that is updated, everything else is the same
                                                           # so let's not use a queue, the samples will be edited, and will already be in the current kwargs
     
     print("Samples after coverage = {}".format(coverage_results))
