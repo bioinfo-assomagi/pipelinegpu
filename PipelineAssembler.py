@@ -16,7 +16,7 @@ from Pipes.EndPipe import EndPipe
 from Pipes.StartPipe import StartPipe
 from Pipes.Fq2BamPipe import Fq2BamPipe
 from Pipes.InterStage import SampleListFam
-from Pipes.CoveragePipe import CoveragePipe
+from Pipes.CoveragePipe import CoveragePipe2
 from Pipes.VariantCallPipe import VariantCallPipe
 from Pipes.AnnotationPipe import AnnotationPipe
 
@@ -37,6 +37,6 @@ class PipelineAssembler():
         elif pipeline_type == "fq2bam":
             return Pipeline(SampleListFam()).assemblePipe(Fq2BamPipe()).assemblePipe(EndPipe())
         elif pipeline_type == "coverage":
-            return Pipeline(CoveragePipe()).assemblePipe(EndPipe())
+            return Pipeline(CoveragePipe2()).assemblePipe(EndPipe())
         elif pipeline_type == "variantcall":
             return Pipeline(VariantCallPipe()).assemblePipe(AnnotationPipe()).assemblePipe(EndPipe())

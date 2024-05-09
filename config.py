@@ -81,7 +81,19 @@ class CustomConfigParser():
             'APPRIS': self.get('FILES', 'APPRIS'),
             'ECCEZIONI': self.get('FILES', 'ECCEZIONI'),
             'dbNSFP38_gz': self.get('FILES', 'dbNSFP38_gz'),
-            'dbscSNV11_gz': self.get('FILES', 'dbscSNV11_gz')
+            'dbscSNV11_gz': self.get('FILES', 'dbscSNV11_gz'),
+            'OCULAR': self.get('VERTICAL', 'OCULAR'),
+            'VASCULAR': self.get('VERTICAL', 'VASCULAR'),
+            'NEUROLOGY': self.get('VERTICAL', 'NEUROLOGY'),
+            'INTEGRACARDIOSTANCHEZZA': self.get('VERTICAL', 'INTEGRACARDIOSTANCHEZZA'),
+            'MIXED': self.get('VERTICAL', 'MIXED'),
+            'LYMPHOBESITY': self.get('VERTICAL', 'LYMPHOBESITY'),
+            'INFERTILIT': self.get('VERTICAL', 'INFERTILIT'),
+            'CHERATOCONO': self.get('VERTICAL', 'CHERATOCONO'),
+            'PCDH19': self.get('VERTICAL', 'PCDH19'),
+            'GENEOBNEW': self.get('VERTICAL', 'GENEOBNEW'),
+            'CANCER': self.get('VERTICAL', 'CANCER'),
+            'OVERWRITE': self.get('MISC', 'OVERWRITE')
 
             # 'PARABRICKS_INPUTDIR': self.get('PARABRICKS', 'INPUTDIR_NAME')
         }

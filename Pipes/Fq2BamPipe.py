@@ -7,6 +7,7 @@ import config
 import utils
 import multiprocessing
 import queue
+import subprocess
 
 class Fq2BamPipe(Pipe):
 
@@ -57,6 +58,7 @@ class Fq2BamPipe(Pipe):
 
             _input_option = "--in-fq {} {}".format(os.path.join(docker_input_parabricks, pairs_forward), os.path.join(docker_input_parabricks, pairs_reverse))
 
+            
             os.system(' '.join(['docker', 'run', '--gpus', 'all', '--rm', 
                                 '--volume', "{}/:{}".format(config.REF, config.DOCKER_REFDIR), 
                                 '--volume', "{}/:{}".format(principal_directory, config.DOCKER_WORKDIR), 

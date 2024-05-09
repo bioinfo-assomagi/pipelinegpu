@@ -55,79 +55,40 @@ class PrincipalFolderPipe(Pipe):
 
     """ Builds the project tree inside the principal directory. TODO: write this to config """
     def create_paths(self, folder_name):
-        print('Building tree folder...')  # TODO: check if there is a general way to build directory trees
-        # programmatically
-        directories = ["fastq", "fastqfiltered", "temp", "control", "vcf", "bam", "bam/inalaysis", "plot", "annotation",
-                       "pheno", "coverage", "report", "fastQC", "final", "indel"]
+        print('Building tree folder...')
 
-        parabricks_input = join(folder_name, 'parabricks_input/')
-        parabricks_output = join(folder_name, 'parabricks_output/')
-        os.makedirs(parabricks_input)
-        os.makedirs(parabricks_output)
+        directories = ["fastq", 
+                       "fastqfiltered", 
+                       "temp", 
+                            "temp/to_count",
+                            "temp/to_macroarea",
+                       "control", 
+                       "vcf", 
+                       "bam", 
+                            "bam/inalaysis", 
+                       "plot", 
+                       "annotation",
+                       "pheno", 
+                       "coverage", 
+                       "report", 
+                       "fastQC", 
+                       "final", 
+                       "indel", 
+                       "parabricks_input", 
+                       "parabricks_output",
+                       ]
+
+        for directory in directories:
+            os.makedirs(os.path.join(folder_name, directory), exist_ok = True)
+
+
         #config.update("PARABRICKS", "parabricks_input", parabricks_input)
         #config.update("PARABRICKS", "parabricks_output", parabricks_output)
 
+        # spec_log = join(folder_name, 'log')
+        # if not os.path.exists(spec_log):
+        #     os.makedirs(spec_log)
 
-        spec_fastq = join(folder_name, 'fastq/')
-        spec_fastqfilter = join(folder_name, 'fastqfiltered/')
-        spec_temp = join(folder_name, 'temp/')
-        spec_control = join(folder_name, 'control/')
-        spec_vcf = join(folder_name, 'vcf/')
-        spec_bam = join(folder_name, 'bam/')
-        spec_baminanalysis = join(folder_name, 'bam/inanalysis')
-        spec_plot = join(folder_name, 'plot/')
-        spec_annot = join(folder_name, 'annotation/')
-        spec_pheno = join(folder_name, 'pheno/')
-        spec_cov = join(folder_name, 'coverage/')
-        folder_report = join(folder_name, 'report/')
-        # spec_cov_fig = join(folder,'coverage/figure')
-        spec_qc = join(folder_name, 'fastQC/')
-        spec_final = join(folder_name, 'final/')
-        spec_indel = join(folder_name, 'indel/')
-        # spec_json = join(folder,'json/')
-        # spec_json_stat = join(folder,'json/','cov_stat')
-        # spec_json_annot = join(folder,'json/','annot')
-        spec_log = join(folder_name, 'log')
-        if not os.path.exists(spec_qc):
-            os.makedirs(spec_qc)
-        if not os.path.exists(spec_temp):
-            os.makedirs(spec_temp)
-        if not os.path.exists(spec_vcf):
-            os.makedirs(spec_vcf)
-        if not os.path.exists(spec_indel):
-            os.makedirs(spec_indel)
-        if not os.path.exists(spec_bam):
-            os.makedirs(spec_bam)
-        if not os.path.exists(spec_baminanalysis):
-            os.makedirs(spec_baminanalysis)
-        if not os.path.exists(spec_plot):
-            os.makedirs(spec_plot)
-        if not os.path.exists(spec_fastq):
-            os.makedirs(spec_fastq)
-        if not os.path.exists(spec_fastqfilter):
-            os.makedirs(spec_fastqfilter)
-        if not os.path.exists(spec_annot):
-            os.makedirs(spec_annot)
-        if not os.path.exists(spec_pheno):
-            os.makedirs(spec_pheno)
-        if not os.path.exists(spec_cov):
-            os.makedirs(spec_cov)
-        if not os.path.exists(spec_final):
-            os.makedirs(spec_final)
-        if not os.path.exists(spec_control):
-            os.makedirs(spec_control)
-        # if not os.path.exists(spec_json):
-        #	os.makedirs(spec_json)
-        # if not os.path.exists(spec_json_stat):
-        #	os.makedirs(spec_json_stat)
-        # if not os.path.exists(spec_json_annot):
-        #	os.makedirs(spec_json_annot)
-        if not os.path.exists(spec_log):
-            os.makedirs(spec_log)
-        #	if not os.path.exists(spec_cov_fig):
-        #		os.makedirs(spec_cov_fig)
-        if not os.path.exists(folder_report):
-            os.makedirs(folder_report)
 
     
 
@@ -185,7 +146,7 @@ class ReadFastQFilesPipe(Pipe):
                 #files_fq = os.system(' '.join(['scp root@192.168.2.188:/sharedfolders/NGS/tmp/analysis/germinal/*', fastq_folder])) #added
                 #files_fq = os.system(' '.join(['s *', fastq_folder]))  # added
                 files_fq = os.system(
-                    ' '.join(['scp root@192.168.1.51:/home/NGS/tmp/analysis/germinal/*', fastq_folder]))
+                    ' '.join(['scp root@192.168.1.51:/home/NGS/tmp/analysis/germinal/LYMPHOBESITY/*', fastq_folder]))
             else:
                 files_fq = os.system(
                     ' '.join(['scp root@192.168.1.51:/home/NGS/tmp/analysis/germinal/*', fastq_folder]))  # added

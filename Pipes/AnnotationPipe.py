@@ -7,7 +7,7 @@ import numpy as np
 from Bio.Seq import Seq
 
 
-def AnnotationPipe(Pipe):
+class AnnotationPipe(Pipe):
 
     eredita = None
     hgmd = None
@@ -22,6 +22,7 @@ def AnnotationPipe(Pipe):
         self.samples = kwargs.pop("samples", None)
         self.genome_type = kwargs.pop("genome", None)
         self.panel = kwargs.pop("panel", None)
+
         self.input_vcf = os.path.join(self.principal_directory, "vcf/")
         self.output_annotation = os.path.join(self.principal_directory, "annotation/")
         self.output_final = os.path.join(self.principal_directory, "final/")
@@ -35,39 +36,74 @@ def AnnotationPipe(Pipe):
         return kwargs
 
     def run(self):
+
+        self.annotate_vcfs()
+
         self.phenotype = pd.read_csv(
             self.input_phenotype, sep="\t", header=0, encoding="utf-8"
         )
 
         if self.genome_type == "geno37":
             # phenotype = pd.read_csv(self.input_phenotype, sep='\t', header=0)
-            self.eredita = pd.read_csv(config.eredita_37, sep="\t", header=0)
+            self.eredita = pd.read_csv(config.EREDITA37, sep="\t", header=0)
             self.hgmd = pd.read_csv(
-                config.HGMD_37,
+                config.HGMD37,
                 sep="\t",
                 header=None,
                 names=["#CHROM", "START", "END", "hgmd"],
             )
 
         elif self.genome_type == "geno38":
-            self.eredita = pd.read_csv(config.eredita_38, sep="\t", header=0)
+            self.eredita = pd.read_csv(config.EREDITA38, sep="\t", header=0)
             self.hgmd = pd.read_csv(
-                config.HGMD_38,
+                config.HGMD38,
                 sep="\t",
                 header=None,
                 names=["#CHROM", "START", "END", "hgmd"],
                 encoding="latin",
             )
-            self.appris = pd.read_csv(config.appris, sep="\t", header=0)
-            self.eccezioni = pd.read_csv(config.eccezioni, sep="\t", header=0)
+            self.appris = pd.read_csv(config.APPRIS, sep="\t", header=0)
+            self.eccezioni = pd.read_csv(config.ECCEZIONI, sep="\t", header=0)
 
         self.annotation()
         self.filter_disease()
 
+
+    def call_vep(self, folder_in, folder_out):
+        if self.genome_type == 'geno38':
+            os.system(' '.join([config.VEPS,'--cache --refseq --offline --use_given_ref --assembly GRCh38 --fasta', config.GENO38,
+				'--fork 8 --force_overwrite --vcf --format vcf --everything --af_1kg',
+				'--buffer_size 500 --force --xref_refseq --exclude_predicted --use_transcript_ref',
+				'--plugin dbNSFP,%s,'
+				'Eigen-PC-raw_coding_rankscore,CADD_raw_rankscore,DANN_rankscore,MetaSVM_rankscore,'
+				'MetaLR_rankscore,FATHMM_converted_rankscore,MutationTaster_converted_rankscore,'
+				'MutationAssessor_rankscore,Polyphen2_HDIV_rankscore,Polyphen2_HVAR_rankscore,'
+				'SIFT_converted_rankscore,LRT_converted_rankscore,MutPred_rankscore,'
+				'PROVEAN_converted_rankscore,VEST4_rankscore,REVEL_rankscore,'
+				'SIFT_pred,Polyphen2_HDIV_pred,Polyphen2_HVAR_pred,LRT_pred,MutationTaster_pred,MutationAssessor_pred,FATHMM_pred,'
+				'PROVEAN_pred,MetaSVM_pred,MetaLR_pred,M-CAP_pred,fathmm-MKL_coding_pred,'
+				'GERP++_RS_rankscore,phyloP100way_vertebrate_rankscore,phyloP30way_mammalian_rankscore,'
+				'phyloP30way_mammalian_rankscore,phastCons100way_vertebrate_rankscore,'
+				'phastCons30way_mammalian_rankscore,SiPhy_29way_logOdds_rankscore,'
+				'clinvar_clnsig,clinvar_review,Interpro_domain,'
+				'gnomAD_exomes_POPMAX_AF,gnomAD_exomes_POPMAX_nhomalt,gnomAD_exomes_controls_AF,'
+				'gnomAD_genomes_POPMAX_AF,gnomAD_genomes_POPMAX_nhomalt,'
+				'gnomAD_exomes_controls_AC,'
+				'clinvar_review,clinvar_MedGen_id,clinvar_OMIM_id,clinvar_Orphanet_id,gnomAD_exomes_controls_nhomalt,',
+				'--plugin dbscSNV,%s,GRCh38,ada_score,rf_score',
+				'-i',folder_in,'-o', folder_out]) % (config.dbNSFP38_gz, config.dbscSNV11_gz))
+
+    def annotate_vcfs(self):
+        for sample in self.samples:
+            cds_path = sample["cds_path"]
+            cds_annot_path = sample["vcf_annot_CDS"]
+            self.call_vep(cds_path, cds_annot_path)
+
+
     # TODO: add samples as input
     def filter_disease(self):
         for sample in self.samples:
-            name = sample["final_cds_annot"]
+            name = sample["final_cds_annot"] # TODO: fix
             CDS = pd.read_csv(name, sep="\t", header=0)
             #########################################################
             if (
@@ -125,7 +161,7 @@ def AnnotationPipe(Pipe):
         for sample in self.samples:
 
             sample_x = str(sample["name"])
-            cds_annot = sample["cds_annot"]
+            cds_annot = sample["vcf_annot_CDS"]
             # if sample_x=='PRE356.2021': #todo:commenta
             if True:
                 COVERAGE = pd.read_csv(
@@ -249,7 +285,7 @@ def AnnotationPipe(Pipe):
                 # result3[result3['INFO'].str.split('|').str.get(10).str.contains("XM_")]
                 # result = result3
 
-                self.adapt_annotation2(sample, result3)
+                self.adapt_anotation2(sample, result3)
 
     def adapt_anotation2(self, sample, result):
         HGMD = self.hgmd
@@ -987,14 +1023,16 @@ def AnnotationPipe(Pipe):
             final = os.path.join(self.output_final, name + "_CDS_annot.csv")
             result3.to_csv(final, sep="\t", index=False, encoding="utf-8")
 
-            sample["final_cds_annot"] = final
+            
 
             print("Annotation CDS len:", len(result3), "->", str(name))
 
         else:
             result3 = pd.DataFrame(columns=cols)
-            final = join(folder, name + "_CDS_annot.csv")
+            final = os.path.join(self.output_final, name + "_CDS_annot.csv")
             result3.to_csv(final, sep="\t", index=False, encoding="utf-8")
             print("Annotation CDS len:", len(result3), "->", str(name))
+        
+        sample["final_cds_annot"] = final
 
         return result3
