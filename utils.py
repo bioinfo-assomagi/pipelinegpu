@@ -1,6 +1,12 @@
 import logging
-import config
+import config # TODO: utils should not know about config, fix it
 import os
+import json
+
+
+def get_buchiartificiali():
+    import pandas as pd
+    return pd.read_csv(config.BUCHIARTIFICIALI, sep="\t", header=0)
 
 
 def get_vertical_macro(panel):
@@ -33,6 +39,12 @@ def get_vertical_macro(panel):
 
     return _vertical_macro 
 
+
+def sample_json(sample_json_path):
+    with open(sample_json_path) as f:
+        d = json.load(f)
+    return d
+    
 
 def get_db_path(server_id):
     if server_id == "b":

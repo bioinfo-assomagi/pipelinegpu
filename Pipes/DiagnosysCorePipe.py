@@ -10,7 +10,9 @@ import glob
 import re
 import shutil
 import tools
+import dir_tree
 from DBContext import DBContext
+from Entities.Sample import Sample
 
 """
 3 Pipelines contained here - PrincipalFolderPipe, ReadFastQFilesPipe, ProcessFastQFilesPipe
@@ -23,7 +25,7 @@ from DBContext import DBContext
 					'-N',str(args.threads),'-m',str(args.memory),'-b',args.bwa,'-s',args.samtools,'-gk',args.gatk])"""
 
 
-""" Creates the principal directory of the sequencing project. """
+""" Creates the principal directory of the sequencing project. """ #TODO: will be removed, replaced in InputPipe (Setup)
 class PrincipalFolderPipe(Pipe):
 
     def __init__(self) -> None:
@@ -42,10 +44,9 @@ class PrincipalFolderPipe(Pipe):
             else:
                 shutil.rmtree(principal_directory)
 
-        os.makedirs(principal_directory)
-        #config.update("DEFAULTS", "principal_directory", principal_directory)
+        #dir_tree.build()
 
-        self.create_paths(principal_directory)
+        #self.create_paths(principal_directory)
 
         kwargs.update({'over': over, 'principal_directory': principal_directory, 'dest': dest})
         print("Principal Directory: {}".format(principal_directory))
@@ -53,41 +54,41 @@ class PrincipalFolderPipe(Pipe):
         return kwargs
         
 
-    """ Builds the project tree inside the principal directory. TODO: write this to config """
-    def create_paths(self, folder_name):
+    """ Builds the project tree inside the principal directory. TODO: write this to config: DONE, check dir_tree.py """
+    def create_paths(self, principal_directory):
         print('Building tree folder...')
-
+        os.makedirs(principal_directory)
         directories = ["fastq", 
-                       "fastqfiltered", 
-                       "temp", 
-                            "temp/to_count",
-                            "temp/to_macroarea",
-                       "control", 
-                       "vcf", 
-                       "bam", 
-                            "bam/inalaysis", 
-                       "plot", 
-                       "annotation",
-                       "pheno", 
-                       "coverage", 
-                       "report", 
-                       "fastQC", 
-                       "final", 
-                       "indel", 
-                       "parabricks_input", 
-                       "parabricks_output",
-                       ]
+                        "fastqfiltered", 
+                        "temp", 
+                                "temp/to_count",
+                                "temp/to_macroarea",
+                        "control", 
+                        "vcf", 
+                        "bam", 
+                                "bam/inalaysis", 
+                        "plot", 
+                        "annotation",
+                        "pheno", 
+                        "coverage", 
+                        "report", 
+                        "fastQC", 
+                        "final", 
+                        "indel", 
+                        "parabricks_input", 
+                        "parabricks_output",
+                        ]
 
         for directory in directories:
-            os.makedirs(os.path.join(folder_name, directory), exist_ok = True)
+            os.makedirs(os.path.join(principal_directory, directory), exist_ok = True)
 
 
-        #config.update("PARABRICKS", "parabricks_input", parabricks_input)
-        #config.update("PARABRICKS", "parabricks_output", parabricks_output)
+        # config.update("PARABRICKS", "parabricks_input", parabricks_input)
+        # config.update("PARABRICKS", "parabricks_output", parabricks_output)
 
-        # spec_log = join(folder_name, 'log')
-        # if not os.path.exists(spec_log):
-        #     os.makedirs(spec_log)
+        spec_log = join(principal_directory, 'log')
+        if not os.path.exists(spec_log):
+            os.makedirs(spec_log)
 
 
     
@@ -109,7 +110,7 @@ class ResyncDBPipe(Pipe):
         kwargs.update({"dest": server_id, "db_path": local_db_path})
         return kwargs
 
-""" Transfer the FastQ files from the external server to the project directory. """
+""" Transfer the FastQ files from the external server to the project directory. TODO: organize file into samples, and create the sample jsons. """
 class ReadFastQFilesPipe(Pipe):
 
     def __init__(self) -> None:
@@ -117,15 +118,34 @@ class ReadFastQFilesPipe(Pipe):
 
     def process(self, **kwargs):
 
-        principal_directory = kwargs.pop('principal_directory')
+        #principal_directory = kwargs.pop('principal_directory')
+        principal_directory = dir_tree.principal_directory.path
         fastq = kwargs.pop('fastq', None)
         dest = kwargs.pop('dest', None)
 
         fastq_folder = self.copy_fastq_files(fastq, dest, principal_directory)
         fastq_files = glob.glob(fastq_folder + '*')
 
+        self.store_sample_data(fastq_files)
+
+        # INIT (sample1.json, sample2.json, ..., sampleN.json) 
+
         kwargs.update({"fastq_folder": fastq_folder, "principal_directory": principal_directory, "fastq": fastq, "dest": dest, "fastq_files": fastq_files})
         return kwargs
+
+    def store_sample_data(self, fastq_files):
+        sample_dict = utils.group_samples(fastq_files)
+        
+        # sampl_dict will be a dictionary of sample dictionaries (TODO: better to be Sample objects in the future)
+        # write each sample dictionary into a json file inside sample_data directory
+        for sample in sample_dict.values():
+            s = Sample.fromDict(sample)
+            s.set_filepath(dir_tree.principal_directory.sample_data.path)
+            s.saveJSON()
+        
+
+        
+
 
     def copy_fastq_files(self, fastq_source, server_id, destination):
         
@@ -149,7 +169,7 @@ class ReadFastQFilesPipe(Pipe):
                     ' '.join(['scp root@192.168.1.51:/home/NGS/tmp/analysis/germinal/LYMPHOBESITY/*', fastq_folder]))
             else:
                 files_fq = os.system(
-                    ' '.join(['scp root@192.168.1.51:/home/NGS/tmp/analysis/germinal/*', fastq_folder]))  # added
+                    ' '.join(['scp root@192.168.1.51:/home/NGS/tmp/analysis/germinalprot/*.fastq.gz', fastq_folder]))  # added
             # files_fq = system(' '.join(['scp server@192.168.1.201:/media/4e955bfb-88f0-4cc7-a824-27ee0b4bf6e2/NGS
             # /tmp/analysis/germinal2/*',fastq_folder])) files_fq = system(' '.join(['scp
             # server@192.168.1.201:/media/4e955bfb-88f0-4cc7-a824-27ee0b4bf6e2/NGS/tmp/analysis/somatic1/*',
@@ -157,6 +177,8 @@ class ReadFastQFilesPipe(Pipe):
 
         return fastq_folder
 
+
+# Parallel starts here
 
 class UnzipFastQFilesPipe(Pipe):
 
@@ -277,7 +299,7 @@ class SetSamplesPipe(ParallelPipe):
             {"principal_directory": principal_directory, "fastq_files": fastq_files, "dest": dest, "fastq": fastq,
              "samples_dataframe": df_samples, "thread_id": self.thread_id})
         
-        self.thread_print("SetSamples Pipe finished execution!")
+        self.thread_print("Pipe finished execution!")
         return kwargs
 
     def set_samples(self, principal_directory, fastq_files, dest):

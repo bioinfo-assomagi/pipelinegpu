@@ -2,6 +2,7 @@ from Pipes.Pipe import Pipe
 from Pipes.ParallelPipe import ParallelPipe
 import os
 import csv
+import dir_tree
 
 import config
 import sys
@@ -40,15 +41,19 @@ class CoveragePipe2(ParallelPipe):
 
     def process(self, **kwargs):
         self.thread_id = kwargs.pop("thread_id", None)
-        principal_directory = kwargs.pop("principal_directory", None)
+        #principal_directory = kwargs.pop("principal_directory", None)
+        principal_directory = dir_tree.principal_directory.path
+        self.principal_directory = principal_directory
         panel = kwargs.pop("panel", None)
         folder_pheno = join(principal_directory, "pheno")
-        # phenotype = kwargs.pop("phenotype")
         genome_type = kwargs.pop("genome", None)
         dest = kwargs.pop("dest", None)
         path = kwargs.pop("path")
-        input_phenotype = join(principal_directory, "pheno/phenotype")
-        phenotype = pd.read_csv(input_phenotype, sep="\t", header=0, dtype=str)
+        input_phenotype = join(folder_pheno, "phenotype")
+        if os.path.isfile(input_phenotype):
+            phenotype = pd.read_csv(input_phenotype, sep="\t", header=0, dtype=str)
+        else:
+            raise Exception("No phenotype present. CoveragePipe terminating ...")
 
         dbsnp = dbsnp144_38 if genome_type == "geno38" else dbsnp144_37
         genome = genome_dict[genome_type]
@@ -61,6 +66,7 @@ class CoveragePipe2(ParallelPipe):
 
         vertical = pd.DataFrame()
         verticalX = pd.DataFrame()
+        
         if genome_type == "geno38":
             vertical, verticalX, BED = self.cutCDS(genelist, sample, folder_pheno, dest)
         elif genome_type == "geno37":
@@ -502,7 +508,7 @@ class CoveragePipe2(ParallelPipe):
                 }
             )
 
-            c = pd.concat([bed, region])
+            bed = pd.concat([bed, region])
             bed.to_csv(bed_, sep="\t", index=False)
             bedx_ = join(folder_pheno, "bedX_" + sample_name)
             bedx = pd.read_csv(bedx_, sep="\t")
@@ -673,6 +679,14 @@ class CoveragePipe2(ParallelPipe):
 
         return kwargs
 
+    # def check_existence_prev_step(self, path):
+    #     # Coverage pipe requires the phenotype file in the pheno folder, so it can build the BED and Vertical files
+    #     if os.path.isfile(path):
+    #         return True
+
+    #     return False
+        
+            
     def cutCDS(self, genelist, sample, folder_pheno, server_id):
         sample_name = sample["name"]
         vertical, verticalX, BED = cutCDS_jurgen.cutCDS(

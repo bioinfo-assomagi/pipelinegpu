@@ -108,6 +108,12 @@ class CustomConfigParser():
         return cfg
 
 
+
+def update(upd_config_params):
+    for params in upd_config_params:
+        update_cfg(*params)
+
+# TODO: rename to private
 def update_cfg(section, parameter, value):
     cfg = CustomConfigParser()
     cfg.set(section, parameter, value)

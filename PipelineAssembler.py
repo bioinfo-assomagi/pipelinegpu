@@ -40,3 +40,11 @@ class PipelineAssembler():
             return Pipeline(CoveragePipe2()).assemblePipe(EndPipe())
         elif pipeline_type == "variantcall":
             return Pipeline(VariantCallPipe()).assemblePipe(AnnotationPipe()).assemblePipe(EndPipe())
+        elif pipeline_type == "test":
+            return Pipeline(Setup()).assemblePipe(ResyncDBPipe()).assemblePipe(ReadFastQFilesPipe()).assemblePipe(EndPipe())
+    
+    def independent_pipeline(pipeline_type):
+        if pipeline_type == "coverage":
+            return Pipeline(Setup()).assemblePipe(CoveragePipe2())
+        elif pipeline_type == "fq2bam":
+            return Pipeline(Setup()).assemblePipe(SampleListFam()).assemblePipe(Fq2BamPipe()).assemblePipe(EndPipe())
