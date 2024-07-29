@@ -15,6 +15,9 @@ from DBContext import DBContext
 import pandas as pd
 import numpy as np
 
+import dir_tree
+from Entities.Sample import Sample
+
 # TODO: if files not found inside samples list, try reading them from principal_directory
 class VariantCallPipe(ParallelPipe):
     path = os.getcwd()
@@ -33,14 +36,15 @@ class VariantCallPipe(ParallelPipe):
 
     def process(self, **kwargs):
         self.principal_directory = kwargs.pop("principal_directory", None)
-        samples: list = kwargs.pop("samples", None)
+        sample_jsons = glob.glob(join(dir_tree.principal_directory.sample_data.path, "*.json"))
+        samples = [Sample.fromJSON(json_file) for json_file in sample_jsons]
         self.panel = kwargs.pop("panel", None)
 
         print("TESTING VARIANT CALL PIPE: {}".format(samples))
         self.HaplotypeCaller(samples)
         self.DeepVariant(samples)
-        self.Filter(samples)
-        self.Merge(samples)
+        #self.Filter(samples)
+        #self.Merge(samples)
 
         kwargs.update(
             {"principal_directory": self.principal_directory, "samples": samples, "panel": self.panel})
@@ -52,8 +56,8 @@ class VariantCallPipe(ParallelPipe):
         docker_input_parabricks = os.path.join(config.DOCKER_WORKDIR, 'bam')
 
         for sample in samples:
-            sample_name = str(sample['name'])
-            bam_filename = sample['bam'].split('/')[-1]
+            sample_name = str(sample.name)
+            bam_filename = sample.bam.split('/')[-1]
 
             command = ' '.join(['docker', 'run', '--gpus', 'all', '--rm',
                                 '--volume', "{}/:{}".format(config.REF, config.DOCKER_REFDIR),
@@ -69,14 +73,15 @@ class VariantCallPipe(ParallelPipe):
             if os.system(command) != 0:
                 raise Exception("Haplotypecaller failed!")
 
-            sample['vcf_path_haplotypecaller'] = "{}/{}_pb_gatk.vcf".format(os.path.join(self.principal_directory, "temp"), sample_name)
+            sample.vcf_path_haplotypecaller = "{}/{}_pb_gatk.vcf".format(os.path.join(self.principal_directory, "temp"), sample_name)
+            sample.saveJSON()
             
     def DeepVariant(self, samples):
         docker_input_parabricks = os.path.join(config.DOCKER_WORKDIR, 'bam')
 
         for sample in samples:
-            sample_name = str(sample['name'])
-            bam_filename = sample['bam'].split('/')[-1]
+            sample_name = str(sample.name)
+            bam_filename = sample.bam.split('/')[-1]
 
             command = ' '.join(['docker', 'run', '--gpus', 'all', '--rm', 
                                 '--volume', "{}/:{}".format(config.REF, config.DOCKER_REFDIR), 
@@ -91,18 +96,28 @@ class VariantCallPipe(ParallelPipe):
             if os.system(command) != 0:
                 raise Exception("Deepvariant failed!")
             
-            sample['vcf_path_deepvariant'] = "{}/{}_pb_deepvariant.vcf".format(os.path.join(self.principal_directory, "temp"), sample_name)
+            sample.vcf_path_deepvariant = "{}/{}_pb_deepvariant.vcf".format(os.path.join(self.principal_directory, "temp"), sample_name)
+            sample.saveJSON()
         
     """ Filter exones. Note, the dataframes named intronic contain all regions, exones + introns. """
     def Filter(self, samples):
         for sample in samples:
-           
+            
+            if not hasattr(sample, "vcf_path_haplotypecaller"):
+                raise Exception("No haplotypecaller output registered for this sample!")
+            elif not  os.path.exists(sample.vcf_path_haplotypecaller):
+                raise Exception("The registered haplotypecaller output file doesn't exist in the project directory!")
+            
+            if not hasattr(sample, "vcf_path_deepvariant"):
+                raise Exception("No deepvariant output registered for this sample!")
+            elif not  os.path.exists(sample.vcf_path_deepvariant):
+                raise Exception("The registered deepvariant output file doesn't exist in the project directory!")
+            
             filter_intronic_vcf_haplotypecaller, filter_cds_vcf_haplotypecaller = self.vcf_vertical_filter(sample, 'haplotypecaller')
             filter_intronic_vcf_deepvariant, filter_cds_vcf_deepvariant = self.vcf_vertical_filter(sample, 'deepvariant')
             
             filter_cds_vcf_haplotypecaller = self.buchiartificiali_filter(filter_cds_vcf_haplotypecaller)
             filter_cds_vcf_deepvariant = self.buchiartificiali_filter(filter_cds_vcf_deepvariant)
-            
                   
             filter_intronic_vcf_haplotypecaller.to_csv(join(self.principal_directory, 'vcf/', sample['name']) + '_unfied_all.vcf', sep='\t', index=False)
             filter_cds_vcf_haplotypecaller.to_csv(join(self.principal_directory, 'vcf/', sample['name']) + '_unfied_only_CDS.vcf', sep='\t', index=False)
@@ -129,6 +144,13 @@ class VariantCallPipe(ParallelPipe):
         
         return filtered_cds_vcf           
             
+    def intersect(self, sample, vcf_type):
+        import pybedtools
+        a = pybedtools.BedTool(sample.vcf)
+        b = pybedtools.BedTool(sample.bed)
+        intersection = a.intersect(b, u=True)
+        
+
     def vcf_vertical_filter(self, sample, vcf_type):
         vertical = sample['vertical']
         if type(vertical) is str:

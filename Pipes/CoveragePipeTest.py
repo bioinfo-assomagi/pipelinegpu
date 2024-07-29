@@ -1,5 +1,5 @@
 
-from Pipe import Pipe
+from Pipes.Pipe import Pipe
 import utils
 import os
 import pandas as pd
@@ -17,19 +17,44 @@ class CoveragePipeTest(Pipe):
     def process(self, **kwargs):
         self.panel = kwargs.pop("panel")
         self.sample = kwargs.pop("sample")
-        self.load_prereq()
-        #sample_name = kwargs.pop("sample")
-        # sample_data_dir = dir_tree.sample_data.path
-        # sample_json_filename = "{}.json".format(sample_name)
-        # sample_json = os.path.join(sample_data_dir, sample_json_filename)
-        # self.sample_data = Sample.fromJSON(sample_json(sample_json))
+        dest = kwargs.pop("dest")
+        
+        
+        input_phenotype = os.path.join(dir_tree.principal_directory.pheno.path, "phenotype")
 
+        if os.path.isfile(input_phenotype):
+            phenotype = pd.read_csv(input_phenotype, sep="\t", header=0, dtype=str)
+        else:
+            raise Exception("No phenotype present. CoveragePipe terminating ...")
+
+        genelist = list(phenotype["gene"][phenotype["sample"] == self.sample.name])
+        self.vertical_df, self.verticalX_df, self.BED = self.cutCDS(genelist, dest) # cutCDS should be decoupled from CoverageAnalysis
+        #self.vertical_df, self.verticalX_df = self.get_vertical_dataframes()
+        
+        # self.sample.vertical = self.vertical
+        # self.sample.verticalX = self.verticalX
+        # self.sample.BED = self.BED
+
+        self.load_prereq()
         self.count_unbalance()
         count_disease, count_sex = self.merge_chunks()
         
 
-        kwargs.update({"panel": self.panel, "sample": self.sample})
+        kwargs.update({"panel": self.panel, "sample": self.sample, "dest": dest}) # only if donwstream pipes of the same thread will be present
         return kwargs
+
+    def get_vertical_dataframes(self):
+        pheno_folder = dir_tree.principal_directory.pheno.path
+
+        vertical_path = os.path.join(pheno_folder, "vertical_{}".format(self.sample.name))
+        verticalX_path = os.path.join(pheno_folder, "verticalX_{}".format(self.sample.name))
+        
+        if os.path.isfile(vertical_path) and os.path.isfile(verticalX_path):
+            vertical_df = pd.read_csv(vertical_path, sep="\t")
+            verticalX_df = pd.read_csv(verticalX_path, sep="\t")
+            return vertical_df, verticalX_df
+        else:
+            raise Exception("No vertical files for sample {}".format(str(self.sample.name)))
 
     def filter_disease_files(BED, vertical, folder, phenotype, COUNT, sample, buchiartificiali):
         COUNT = COUNT[["#CHROM", "POS", "C%", "G%", "T%", "A%", "ins%", "del%", "sum", "DEPTH"]].sort_values(by=["#CHROM", "POS"], ascending=[True, True])
@@ -111,18 +136,31 @@ class CoveragePipeTest(Pipe):
 
 
     def load_prereq(self):
-        self.vertical_df, self.verticalX_df, self.vertical_macro_df = self.get_vertical_dataframes()
+        #self.vertical_df, self.verticalX_df, self.vertical_macro_df = self.get_vertical_dataframes()
+        _vertical_macro_path = utils.get_vertical_macro(self.panel)
+        if _vertical_macro_path is not None:
+            self.vertical_macro_df = pd.read_csv(_vertical_macro_path, sep="\t")
+        else:
+            print("No vertical_macro for panel {}".format(self.panel))
+            self.vertical_macro_df = None
         self.buchiartificali = utils.get_buchiartificiali()
 
     def merge_chunks(self):
         #TODO: add full paths to the *_disease and *_SEX
-        final_disease_filename = os.path.join(dir_tree.temp.path, "{}_final_disease".format(str(self.sample["name"])))
-        os.system(" ".join(["cat", "*_disease", ">", final_disease_filename]))
+        temp_folder = dir_tree.principal_directory.temp.path
+        to_count_folder = dir_tree.principal_directory.temp.to_count.path
+
+        final_disease_filename = os.path.join(temp_folder, "{}_final_disease".format(str(self.sample.name)))
+        disease_filenames = os.path.join(to_count_folder, "*_disease")
+
+        final_sex_filename = os.path.join(temp_folder, "{}_final_sex".format(str(self.sample.name)))
+        sex_filenames = os.path.join(to_count_folder, "*_SEX")
+
+        os.system(" ".join(["cat", disease_filenames, ">", final_disease_filename]))
         count_disease = pd.read_csv(final_disease_filename, sep="\t", header=None, names=cols)
         count_disease.fillna(0, inplace=True)
 
-        final_sex_filename = os.path.join(dir_tree.temp.path, "{}_final_sex".format(str(self.sample["name"])))
-        os.system(" ".join(["cat", "*_SEX", ">", final_sex_filename]))
+        os.system(" ".join(["cat", sex_filenames, ">", final_sex_filename]))
         count_sex = pd.read_csv(final_sex_filename, sep="\t", header=None, names=cols)
         count_sex.fillna(0, inplace=True)
 
@@ -131,10 +169,10 @@ class CoveragePipeTest(Pipe):
 
     def count_unbalance(self):
         bam = self.get_bam_filename()
-        sample_name = str(self.sample["name"])
-        mpileup_out = os.path.join(dir_tree.temp_dir, sample_name + "_to_count")
-        folder_to_count = dir_tree.temp_dir.to_count_dir
-        folder_to_macroarea = dir_tree.temp_dir.to_macroarea_dir
+        sample_name = self.sample.name
+        mpileup_out = os.path.join(dir_tree.principal_directory.temp.path, sample_name + "_to_count")
+        folder_to_count = dir_tree.principal_directory.temp.to_count.path
+        folder_to_macroarea = dir_tree.principal_directory.temp.to_macroarea.path
         #file_vcf = join(folder, "temp/", sample_name + "_samt.vcf")
 
         os.system(" ".join(["samtools", "mpileup", "-Q 0 -q 0 -d10000000 -L 100000 -A", bam, ">", mpileup_out]))
@@ -149,15 +187,23 @@ class CoveragePipeTest(Pipe):
                 on_bad_lines="skip",
                 names=["CHROM", "POS", "info", "DEPTH", "CALL", "quality"],
                 chunksize=40 * 100024,
+                
             )
-        
+
+              
         for index, chunk in enumerate(mpileup_out_chunks):
             chunk["sample"] = sample_name
             chunk.rename(columns={"CHROM": "#CHROM"}, inplace=True)
+            print("Length of chunk {}: {}".format(index, len(chunk)))
+
+            print(chunk.columns.values)
 
             # INNER JOIN WITH VERTICAL
             chunky_vertical = pd.merge(chunk, self.vertical_df, on=["#CHROM", "POS"], how='inner')
             chunky_verticalX = pd.merge(chunk, self.verticalX_df, on=["#CHROM", "POS"], how='inner')
+
+            print("Length of chunky vetical: {}".format(len(chunky_vertical)))
+            print("Vertical :", self.vertical_df)
 
             coverage_vertical = self.count_coverage(chunky_vertical)
             coverage_verticalX = self.count_coverage(chunky_verticalX)
@@ -168,7 +214,8 @@ class CoveragePipeTest(Pipe):
             if self.vertical_macro_df is not None:
                 chunky_vertical_macro = pd.merge(chunk, self.vertical_macro_df, on=["#CHROM", "POS"], how='inner')
                 coverage_vertical_macro = self.count_coverage(chunky_vertical_macro)
-                coverage_vertical_macro.to_csv(folder_to_macroarea, sample_name + "_" + str(index) + "_macroarea", sep="\t", index=False,)
+                coverage_vertical_macro.to_csv(os.path.join(folder_to_macroarea, sample_name + "_" + str(index) + "_macroarea"), sep="\t", index=False)
+
 
     def count_coverage(self, chunk):
         #coverage = chunk[["CHROM", "POS", "DEPTH", "CALL"]]
@@ -219,53 +266,55 @@ class CoveragePipeTest(Pipe):
 
         return df
 
-    def get_vertical_dataframes(self):
-        vertical_macro_df = None
+    # def get_vertical_dataframes(self):
+    #     vertical_macro_df = None
         
-        vertical_path, verticalX_path, vertical_macro_path = self.get_vertical_files()
-        if vertical_path is None:
-            raise Exception("No vertical files for sample {}".format(str(self.sample["name"])))
-        if vertical_macro_path is not None:
-            vertical_macro_df = pd.read_csv(vertical_macro_path, sep="\t")
-        else:
-            print("No vertical_macro for panel {}".format(self.panel))
+    #     vertical_path, verticalX_path, vertical_macro_path = self.get_vertical_files()
+    #     if vertical_path is None:
+    #         raise Exception("No vertical files for sample {}".format(str(self.sample.name)))
+    #     if vertical_macro_path is not None:
+    #         vertical_macro_df = pd.read_csv(vertical_macro_path, sep="\t")
+    #     else:
+    #         print("No vertical_macro for panel {}".format(self.panel))
         
-        vertical_df = pd.read_csv(vertical_path, sep="\t")
-        verticalX_df = pd.read_csv(verticalX_path, sep="\t")
+    #     vertical_df = pd.read_csv(vertical_path, sep="\t")
+    #     verticalX_df = pd.read_csv(verticalX_path, sep="\t")
 
-        return vertical_df, verticalX_df, vertical_macro_df
+    #     return vertical_df, verticalX_df, vertical_macro_df
 
-    def get_vertical_files(self):
-        """ Check the pheno/ directory if the vertical and verticalX are present. Then, check if virtual_macro is also present. See config.cfg for the
-        directories of vertical_macro files."""
-        sample = self.sample
-        _vertical_path = None
-        _verticalX_path = None
-        _vertical_macro_path = None
-        pheno_dir = dir_tree.pheno_dir # ideally, we want to store each directory globally during runtime
-
-        _vertical_macro_path = utils.get_vertical_macro(self.panel)
-
-        if "vertical" not in sample.keys() or sample["vertical"] is None:
-            vertical_filename = "vertical_{}".format(str(sample["name"]))
-            verticalX_filename = "verticalX_{}".format(str(sample["name"]))
-            if os.path.isfile(os.path.join(pheno_dir, vertical_filename)):
-                _vertical_path = os.path.join(pheno_dir, vertical_filename)
-            if os.path.isfile(os.path.join(pheno_dir, verticalX_filename)):
-                _verticalX_path = os.path.join(pheno_dir, verticalX_filename)
-
-            return _vertical_path, _verticalX_path, _vertical_macro_path
-
-        return sample["vertical"], sample["verticalX"], _vertical_macro_path
 
     def get_bam_filename(self):
         sample = self.sample
-        bam_dir = dir_tree.bam_dir
 
-        if "bam" not in sample.keys() or sample["bam"] is None:
-            # Search in the directory tree if we can find bam files for our sample
-            bam_filename = "{}_final.bam".format(str(sample["name"]))
-            if os.path.isfile(os.path.join(bam_dir, bam_filename)):
-                return os.path.join(bam_dir, bam_filename)
-            
-        return sample["bam"]
+        # if "bam" not in sample.keys() or sample.bam is None:
+        #     # Search in the directory tree if we can find bam files for our sample
+        #     bam_filename = "{}_final.bam".format(str(sample["name"]))
+        #     if os.path.isfile(os.path.join(bam_dir, bam_filename)):
+        #         return os.path.join(bam_dir, bam_filename)
+        
+        if sample.bam is None:
+            raise Exception("No bam file for sample {}".format(str(sample.name)))
+        
+        return sample.bam
+
+
+    def cutCDS(self, genelist, server_id):
+        import cutCDS_jurgen 
+        sample = self.sample
+        folder_pheno = dir_tree.principal_directory.pheno.path
+        vertical, verticalX, BED = cutCDS_jurgen.cutCDS(
+            genelist, sample.name, folder_pheno, server_id
+        )
+        # Additional processing ... TODO
+
+        return vertical, verticalX, BED
+
+    def build_bed(self, genelist, folder_pheno, server_id):
+        import cutCDS_jurgen
+        sample = self.sample
+        folder_pheno = dir_tree.principal_directory.pheno.path
+        BED, vertical = cutCDS_jurgen.build_bed(
+            genelist, sample, folder_pheno, server_id
+        )
+
+        return vertical, None, BED

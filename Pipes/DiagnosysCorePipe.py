@@ -1,6 +1,7 @@
 from Pipes.Pipe import Pipe
 from Pipes.ParallelPipe import ParallelPipe
 import os
+import multiprocessing
 
 import config
 import sys
@@ -13,6 +14,8 @@ import tools
 import dir_tree
 from DBContext import DBContext
 from Entities.Sample import Sample
+from Pipeline import Pipeline
+from Pipes.CoveragePipeTest import CoveragePipeTest
 
 """
 3 Pipelines contained here - PrincipalFolderPipe, ReadFastQFilesPipe, ProcessFastQFilesPipe
@@ -110,7 +113,7 @@ class ResyncDBPipe(Pipe):
         kwargs.update({"dest": server_id, "db_path": local_db_path})
         return kwargs
 
-""" Transfer the FastQ files from the external server to the project directory. TODO: organize file into samples, and create the sample jsons. """
+""" Transfer the FastQ files from the external server to the project directory. TODO: (Let's leave it to other pipes) Additionally, organizes files into samples, and creates the sample jsons. """
 class ReadFastQFilesPipe(Pipe):
 
     def __init__(self) -> None:
@@ -123,25 +126,15 @@ class ReadFastQFilesPipe(Pipe):
         fastq = kwargs.pop('fastq', None)
         dest = kwargs.pop('dest', None)
 
-        fastq_folder = self.copy_fastq_files(fastq, dest, principal_directory)
-        fastq_files = glob.glob(fastq_folder + '*')
+        fastq_files = self.copy_fastq_files(fastq, dest, principal_directory)
 
-        self.store_sample_data(fastq_files)
+        #self.store_sample_data(fastq_files)
 
         # INIT (sample1.json, sample2.json, ..., sampleN.json) 
 
-        kwargs.update({"fastq_folder": fastq_folder, "principal_directory": principal_directory, "fastq": fastq, "dest": dest, "fastq_files": fastq_files})
+        kwargs.update({"principal_directory": principal_directory, "fastq": fastq, "dest": dest, "fastq_files": fastq_files})
         return kwargs
 
-    def store_sample_data(self, fastq_files):
-        sample_dict = utils.group_samples(fastq_files)
-        
-        # sampl_dict will be a dictionary of sample dictionaries (TODO: better to be Sample objects in the future)
-        # write each sample dictionary into a json file inside sample_data directory
-        for sample in sample_dict.values():
-            s = Sample.fromDict(sample)
-            s.set_filepath(dir_tree.principal_directory.sample_data.path)
-            s.saveJSON()
         
 
         
@@ -166,7 +159,7 @@ class ReadFastQFilesPipe(Pipe):
                 #files_fq = os.system(' '.join(['scp root@192.168.2.188:/sharedfolders/NGS/tmp/analysis/germinal/*', fastq_folder])) #added
                 #files_fq = os.system(' '.join(['s *', fastq_folder]))  # added
                 files_fq = os.system(
-                    ' '.join(['scp root@192.168.1.51:/home/NGS/tmp/analysis/germinal/LYMPHOBESITY/*', fastq_folder]))
+                    ' '.join(['scp root@192.168.1.51:/home/NGS/tmp/analysis/germinalprot/*.fastq.gz*', fastq_folder]))
             else:
                 files_fq = os.system(
                     ' '.join(['scp root@192.168.1.51:/home/NGS/tmp/analysis/germinalprot/*.fastq.gz', fastq_folder]))  # added
@@ -175,10 +168,19 @@ class ReadFastQFilesPipe(Pipe):
             # server@192.168.1.201:/media/4e955bfb-88f0-4cc7-a824-27ee0b4bf6e2/NGS/tmp/analysis/somatic1/*',
             # fastq_folder]))
 
-        return fastq_folder
+        copied_fastq_files = glob.glob(fastq_folder + '*')
+
+        return copied_fastq_files
+
+    
+
 
 
 # Parallel starts here
+
+#TODO: each thread should read its sample info from the sample_data directory.
+# The "mini" pipes will be executed sequentially, i.e. each of these pipes will not be assigned to a different thread after the previous pipe has finished processing its sample.
+# this way, samples will not be reassigned each time a pipe is initiated, which could lead to pipes accessing sample info that is not already available due to the previous pipe not finishing yet.
 
 class UnzipFastQFilesPipe(Pipe):
 
@@ -186,11 +188,14 @@ class UnzipFastQFilesPipe(Pipe):
         super().__init__()
 
     def process(self, **kwargs):
-        self.thread_id = kwargs.pop('thread_id')
-        fastq_folder = kwargs.pop("fastq_folder")
+        # Take the sample_name as argument and read the fastq paths from the json
+        self.thread_id = os.getpid()
+        #fastq_folder = kwargs.pop("fastq_folder")
+        fastq_folder = dir_tree.principal_directory.fastq.path
         # principal_directory = kwargs.pop("name_folder")
         fastq_files = kwargs.pop("fastq_files")
-        utils.thread_print(self.thread_id, "Inside UnzipFastQFilesPipe pipe. List of fastq_files = {}".format(fastq_files))
+        #fastq_files = glob.glob(fastq_folder + '*')
+        #utils.thread_print(self.thread_id, "Inside UnzipFastQFilesPipe pipe. List of fastq_files = {}".format(fastq_files))
         unizzped_fastq_files = self.unzip_fastq(fastq_files)
         utils.thread_print(self.thread_id, "Inside UnzipFastQFilesPipe pipe. List of unizzped_fastq_files = {}".format(unizzped_fastq_files))
         kwargs.update({"fastq_folder": fastq_folder, "fastq_files": unizzped_fastq_files, "thread_id": self.thread_id})
@@ -239,8 +244,10 @@ class ProcessFastQFilesPipe2(Pipe):
         super().__init__()
 
     def process(self, **kwargs):
-        fastq_folder = kwargs.pop("fastq_folder")
-        principal_directory = kwargs.pop("principal_directory")
+        #fastq_folder = kwargs.pop("fastq_folder")
+        principal_directory = dir_tree.principal_directory.path
+        fastq_folder = dir_tree.principal_directory.fastq.path
+        #principal_directory = kwargs.pop("principal_directory")
         fastq_files = kwargs.pop("fastq_files")
 
         threads = kwargs.pop("threads")
@@ -287,8 +294,9 @@ class SetSamplesPipe(ParallelPipe):
 
     def process(self, **kwargs):
 
-        principal_directory = kwargs.pop("principal_directory")
-        fastq_files = kwargs.pop("fastq_files")
+        #principal_directory = kwargs.pop("principal_directory")
+        principal_directory = dir_tree.principal_directory.path
+        fastq_files = kwargs.pop("fastq_files") # processed fastq files
         dest = kwargs.pop("dest")
         fastq = kwargs.pop("fastq")
         self.thread_id = kwargs.pop("thread_id")
@@ -305,20 +313,9 @@ class SetSamplesPipe(ParallelPipe):
     def set_samples(self, principal_directory, fastq_files, dest):
         import pandas as pd
 
-        sample_dict = {}
-        for fastq_file in fastq_files:
-            fastq_name = fastq_file.split('/')[-1]  # get the name of the fastq_file without the absolute path
-            sample_name = fastq_name.split('_')[0]  # get only the sample name e.g. E380.2023
+        sample_dict = utils.group_samples(fastq_files)
 
-            if sample_name not in sample_dict:
-                sample_dict[sample_name] = {'name': sample_name, 'forward': None, 'reverse': None}
-
-            if 'R1' in fastq_name:
-                sample_dict[sample_name]['forward'] = fastq_file
-            elif 'R2' in fastq_name:
-                sample_dict[sample_name]['reverse'] = fastq_file
-
-        #utils.thread_print(self.thread_id, "sample_dict = {}".format(sample_dict))
+        self.store_sample_data(sample_dict)
 
         df_samples = pd.DataFrame(list(sample_dict.values()))
         df_samples.sort_values(by=['name'], inplace=True)
@@ -326,9 +323,34 @@ class SetSamplesPipe(ParallelPipe):
 
         self.thread_print("Samples {} written to: {}".format(sample_dict.keys(), join(principal_directory, "sample_list_{}.csv".format(self.thread_id))))
 
+        # for fastq_file in fastq_files:
+        #     fastq_name = fastq_file.split('/')[-1]  # get the name of the fastq_file without the absolute path
+        #     sample_name = fastq_name.split('_')[0]  # get only the sample name e.g. E380.2023
+
+        #     if sample_name not in sample_dict:
+        #         sample_dict[sample_name] = {'name': sample_name, 'forward': None, 'reverse': None}
+
+        #     if 'R1' in fastq_name:
+        #         sample_dict[sample_name]['forward'] = fastq_file
+        #     elif 'R2' in fastq_name:
+        #         sample_dict[sample_name]['reverse'] = fastq_file
+
+        # #utils.thread_print(self.thread_id, "sample_dict = {}".format(sample_dict))
+
         return df_samples
 
+        
+        
+    def store_sample_data(self, sample_dict):
+        # sampl_dict will be a dictionary of sample dictionaries (TODO: better to be Sample objects in the future)
+        # write each sample dictionary into a json file inside sample_data directory
+        for sample in sample_dict.values():
+            s = Sample.fromDict(sample)
+            s.set_filepath(dir_tree.principal_directory.sample_data.path)
+            s.saveJSON()
 
+
+""" Pipes that runs the resync of fastq files. Additionally, manipulates filenames and file organization to remove temp files, as well as to prepare it for Parabricks. """
 class PreAlignmentPipe(Pipe):
 
     def __init__(self) -> None:
@@ -337,19 +359,26 @@ class PreAlignmentPipe(Pipe):
     def process(self, **kwargs):
         genome = kwargs.pop('genome')
         df_samples = kwargs.pop('samples_dataframe')
-        principal_directory = kwargs.pop('principal_directory')
+        principal_directory = dir_tree.principal_directory.path
         self.thread_id = kwargs.pop("thread_id", None)
         queue = kwargs.pop("queue", None)
 
         resynced_samples = []
         for index, sample in df_samples.iterrows():
             resynced_sample = self.prealignment(principal_directory, genome, sample)
+            print(os.path.join(dir_tree.principal_directory.sample_data.path, "{}.json".format(resynced_sample['name'])))
+            sample = Sample.fromJSON(os.path.join(dir_tree.principal_directory.sample_data.path, "{}.json".format(resynced_sample['name'])))
+            
+                               
+            sample.pairs_forward_filename = resynced_sample['pairs_forward']
+            sample.pairs_reverse_filename = resynced_sample['pairs_reverse']
+            sample.saveJSON()
+
             resynced_samples.append(resynced_sample)
 
             if queue is not None:
                 queue.put(resynced_sample)
                 
-        print("QUEUE SIZE: {}".format(queue.qsize()))
         kwargs.update({"queue": queue, "samples_dataframe": df_samples, "principal_directory": principal_directory, "resynced_samples": resynced_samples, "genome": genome, "thread_id": self.thread_id})
         return kwargs
 
@@ -412,3 +441,69 @@ class PreAlignmentPipe(Pipe):
             utils.thread_print(self.thread_id, "Resync Failed.....!!!")
             utils.thread_print(self.thread_id, "Exception: %s" % str(e))
             sys.exit(1)
+
+
+
+"""This is a Pipe that "wraps" a Pipeline object that will be executed in parallel. The ProcessPipe will launch a pool of threads that will execute the pipelines in parallel. """
+class ProcessPipe(Pipe):
+    
+    def process(self, **kwargs):
+
+        with multiprocessing.Pool(16) as pool:
+            pool.map(self.worker, self.prepare_args(**kwargs))
+            pool.close()
+            pool.join()
+
+        return kwargs
+
+    def worker(self, kwargs):
+        # Expects kwargs as well as the sample fastq files as input
+        Pipeline(UnzipFastQFilesPipe()) \
+            .assemblePipe(ProcessFastQFilesPipe2()) \
+                .assemblePipe(SetSamplesPipe()) \
+                    .assemblePipe(PreAlignmentPipe()).start(**kwargs)
+
+    def prepare_args(self, **kwargs):
+        fastq_files = kwargs.pop("fastq_files")
+        # You will have to group fastq files into samples again here
+        # The worker can also take multiple samples that will be processed sequentially? Let's make the worker take only one sample
+        # The multiprocessing.pool will assign the samples. Easier to maintain this way.
+        sample_dict = utils.group_samples(fastq_files)
+        l = []
+        for sample in sample_dict.values():
+            forward = sample["forward"]
+            reverse = sample["reverse"]
+            arg_d = kwargs.copy()
+            arg_d.update({"fastq_files": [forward, reverse]})
+            l.append(arg_d)
+
+
+        return l
+
+
+class CoverageWrapperPipe(Pipe):
+
+    def process(self, **kwargs):
+
+        with multiprocessing.Pool(16) as pool:
+            pool.map(self.worker, self.prepare_args(**kwargs))
+            pool.close()
+            pool.join()
+
+        return kwargs
+
+    def worker(self, kwargs):
+        Pipeline(CoveragePipeTest()).start(**kwargs)
+
+    def prepare_args(self, **kwargs):
+        l = []
+        # [sample1, sample2, ..., sampleN]
+        sample_jsons = glob.glob(join(dir_tree.principal_directory.sample_data.path, "*.json"))
+        for json_file in sample_jsons:
+            sample = Sample.fromJSON(json_file)
+            arg_d = kwargs.copy()
+            arg_d.update({"sample": sample})
+            l.append(arg_d)
+        
+        return l
+    

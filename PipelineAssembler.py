@@ -3,7 +3,6 @@ from Pipeline import Pipeline
 from Pipes.RawReadsPipe import RawReadsPipe
 from Pipes.QualityReadsPipe import QualityReadsPipe
 from Pipes.InputPipe import Setup
-from Pipes.DiagnosysCorePipe import PrincipalFolderPipe
 
 from Pipes.DiagnosysCorePipe import ReadFastQFilesPipe
 #from Pipes.DiagnosysCorePipe import ProcessFastQFilesPipe
@@ -12,6 +11,9 @@ from Pipes.DiagnosysCorePipe import ProcessFastQFilesPipe2
 from Pipes.DiagnosysCorePipe import PreAlignmentPipe
 from Pipes.DiagnosysCorePipe import SetSamplesPipe
 from Pipes.DiagnosysCorePipe import ResyncDBPipe
+from Pipes.DiagnosysCorePipe import ProcessPipe
+from Pipes.DiagnosysCorePipe import CoverageWrapperPipe
+
 from Pipes.EndPipe import EndPipe
 from Pipes.StartPipe import StartPipe
 from Pipes.Fq2BamPipe import Fq2BamPipe
@@ -29,7 +31,7 @@ class PipelineAssembler():
     @staticmethod
     def factory(pipeline_type):
         if pipeline_type == "resource":
-            return Pipeline(Setup()).assemblePipe(PrincipalFolderPipe()).assemblePipe(ResyncDBPipe()).assemblePipe(ReadFastQFilesPipe()).assemblePipe(EndPipe())
+            return Pipeline(Setup()).assemblePipe(ResyncDBPipe()).assemblePipe(ReadFastQFilesPipe()).assemblePipe(EndPipe())
         elif pipeline_type == "process":
             return Pipeline(StartPipe()).assemblePipe(UnzipFastQFilesPipe()).assemblePipe(ProcessFastQFilesPipe2()).assemblePipe(SetSamplesPipe()).assemblePipe(PreAlignmentPipe()).assemblePipe(EndPipe())
         elif pipeline_type == "interstage":
@@ -41,7 +43,7 @@ class PipelineAssembler():
         elif pipeline_type == "variantcall":
             return Pipeline(VariantCallPipe()).assemblePipe(AnnotationPipe()).assemblePipe(EndPipe())
         elif pipeline_type == "test":
-            return Pipeline(Setup()).assemblePipe(ResyncDBPipe()).assemblePipe(ReadFastQFilesPipe()).assemblePipe(EndPipe())
+            return Pipeline(Setup()).assemblePipe(ResyncDBPipe()).assemblePipe(ReadFastQFilesPipe()).assemblePipe(ProcessPipe()).assemblePipe(SampleListFam()).assemblePipe(Fq2BamPipe()).assemblePipe(CoverageWrapperPipe()).assemblePipe(VariantCallPipe()).assemblePipe(EndPipe())
     
     def independent_pipeline(pipeline_type):
         if pipeline_type == "coverage":

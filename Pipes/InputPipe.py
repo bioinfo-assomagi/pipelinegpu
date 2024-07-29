@@ -54,7 +54,8 @@ class Setup(Pipe):
 
         if os.path.exists(principal_directory):
             if not over:
-                sys.exit("Folder exist just - Choose another project name, please!!! You can run with <-proj> option")
+                # sys.exit("Folder exist just - Choose another project name, please!!! You can run with <-proj> option")
+                return principal_directory
             else:
                 shutil.rmtree(principal_directory)
 

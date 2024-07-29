@@ -57,6 +57,7 @@ class CoveragePipe2(ParallelPipe):
 
         dbsnp = dbsnp144_38 if genome_type == "geno38" else dbsnp144_37
         genome = genome_dict[genome_type]
+        
         queue = kwargs.pop("queue", None)
 
         sample = kwargs.pop("sample", None)

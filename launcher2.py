@@ -150,11 +150,21 @@ def run_in_parallel(num_threads=3, **kwargs):
 
 
 def tests():
+    from Pipeline import Pipeline
+    from Pipes.DiagnosysCorePipe import CoverageWrapperPipe
+    from Pipes.VariantCallPipe import VariantCallPipe
+    from Pipes.InputPipe import Setup
+
     args = parseInput()
     # from Pipes.InputPipe import Setup
     # setup = Setup()
     # kwargs = setup.process(**vars(args))
-    testPipelineOut = PipelineAssembler().factory('test').start(**vars(args))
+    #testPipelineOut = PipelineAssembler().factory('test').start(**vars(args))
+    Pipeline(Setup()).assemblePipe(CoverageWrapperPipe()).start(**vars(args))
+    #Pipeline(Setup()).assemblePipe(VariantCallPipe()).start(**vars(args))
+    
+    # processPipelineOut = PipelineAssembler().factory('process').start(**vars(args))
+    
 
 if __name__ == "__main__":
     # args = parseInput()
