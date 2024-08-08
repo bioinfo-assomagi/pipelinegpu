@@ -93,50 +93,6 @@ def parseInput():
 
     return parser.parse_args()
 
-def run_in_parallel(num_threads=3, **kwargs):
-    
-    queue = Queue()
-
-    def get_fastq_files_thread(sample_dict, thread_id, thread_num_samples):
-        fastq_files = []
-        sample_names_list = list(sample_dict.keys())
-        # get the samples that will be processed by thread with id=thread_id
-        thread_samples = sample_names_list[thread_id * thread_num_samples : min((thread_id + 1) * thread_num_samples, len(sample_names_list))]
-        # min can be removed, it is just to make sure that we are not going out of index
-
-        for sample_name in thread_samples:
-            fastq_files.append(sample_dict[sample_name]['forward'])
-            fastq_files.append(sample_dict[sample_name]['reverse'])
-
-        return fastq_files
-
-    fastq_files = kwargs.pop("fastq_files")
-    sample_dict = utils.group_samples(fastq_files)
-    print(sample_dict)
-
-    thread_pool = []
-
-    thread_num_samples = math.ceil(len(sample_dict.keys()) / num_threads)
-    if (thread_num_samples < 1):
-        print("Max number of threads allowed is {}".format(len(sample_dict.keys())))
-        sys.exit()
-
-    for thread_id in range(num_threads):
-        fastq_files_thread = get_fastq_files_thread(sample_dict, thread_id, thread_num_samples)
-        kwargs.update({"fastq_files": fastq_files_thread, "thread_id": thread_id, "queue": queue})
-
-        p = Process(target=pipelineAssembler.factory('process').start, kwargs=kwargs)
-        #p = Process(target=dummy_function, kwargs=_kwargs)
-        thread_pool.append(p)
-
-    for p in thread_pool:
-        p.start()
-
-    for p in thread_pool:
-        p.join()
-
-    return queue
-
     """ 
     The p.join() method ensures that the main program waits for each process in the thread_pool to finish before moving on to the next line of code.
 

@@ -8,6 +8,16 @@ def get_buchiartificiali():
     import pandas as pd
     return pd.read_csv(config.BUCHIARTIFICIALI, sep="\t", header=0)
 
+def remove_buchi(df):
+    buchiartificiali = get_buchiartificiali() # TODO: provide it as input?
+    for index, row in buchiartificiali.iterrows():
+        chrom_num = row['#CHROM']
+        start = row['START']
+        end = row['END']
+        mask1 = ((df['#CHROM'] == chrom_num) & (df['POS'] >= start) & (df['POS'] <= end))
+        df.loc[mask1,'DEPTH'] = 0
+    
+    return df
 
 def get_vertical_macro(panel):
     if "OCULAR" in panel:

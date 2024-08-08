@@ -21,21 +21,22 @@ from Entities.Sample import Sample
 # TODO: if files not found inside samples list, try reading them from principal_directory
 class VariantCallPipe(ParallelPipe):
     path = os.getcwd()
-    geno37 = join('/home/magi/', 'dataset/GENOME/37/all_chr37.fa')
-    geno38 = join('/home/magi/', 'dataset/GENOME/38/all_chr38.fa')
-    dbsnp144_37 = join('/home/magi/', 'dataset/dbsnp144/37/common_all_20150605_2.vcf')
-    dbsnp144_38 = join('/home/magi/', 'dataset/dbsnp144/38/common_all_20150603_2.vcf')
-    indel_37 = join('/home/magi/', 'dataset/dbsnp144/37/common_all_20150605_indel.vcf')
-    indel_38 = join('/home/magi/', 'dataset/dbsnp144/38/common_all_20150603_indel.vcf')
-    clinvar = join('/home/magi/', 'dataset/dbsnp144/38/clinvar_20140929_2.vcf')
-    clinvar_indel = join('/home/magi/', 'dataset/dbsnp144/38/clinvar_20140929_indel.vcf')
+    # geno37 = join('/home/magi/', 'dataset/GENOME/37/all_chr37.fa')
+    # geno38 = join('/home/magi/', 'dataset/GENOME/38/all_chr38.fa')
+    # dbsnp144_37 = join('/home/magi/', 'dataset/dbsnp144/37/common_all_20150605_2.vcf')
+    # dbsnp144_38 = join('/home/magi/', 'dataset/dbsnp144/38/common_all_20150603_2.vcf')
+    # indel_37 = join('/home/magi/', 'dataset/dbsnp144/37/common_all_20150605_indel.vcf')
+    # indel_38 = join('/home/magi/', 'dataset/dbsnp144/38/common_all_20150603_indel.vcf')
+    # clinvar = join('/home/magi/', 'dataset/dbsnp144/38/clinvar_20140929_2.vcf')
+    # clinvar_indel = join('/home/magi/', 'dataset/dbsnp144/38/clinvar_20140929_indel.vcf')
     BUCHIARTIFICIALI = join('/home/magi/', 'PROJECT/diagnosys/bin/BUCHIARTIFICIALI.txt')
 
     def __init__(self):
         super().__init__()
 
     def process(self, **kwargs):
-        self.principal_directory = kwargs.pop("principal_directory", None)
+        # self.principal_directory = kwargs.pop("principal_directory", None)
+        self.principal_directory = dir_tree.principal_directory.path
         sample_jsons = glob.glob(join(dir_tree.principal_directory.sample_data.path, "*.json"))
         samples = [Sample.fromJSON(json_file) for json_file in sample_jsons]
         self.panel = kwargs.pop("panel", None)
@@ -99,8 +100,19 @@ class VariantCallPipe(ParallelPipe):
             sample.vcf_path_deepvariant = "{}/{}_pb_deepvariant.vcf".format(os.path.join(self.principal_directory, "temp"), sample_name)
             sample.saveJSON()
         
-    """ Filter exones. Note, the dataframes named intronic contain all regions, exones + introns. """
+    
     def Filter(self, samples):
+        """ Filter the vcf files with the regions present in the BED file (exones/CDS).
+            Additionally it removes variants that fall in buchi regions (regions specified in the buchiartificiali file.)
+            Note, the dataframes named intronic contain all regions, exones + introns. 
+        
+            Args:
+                samples (list): a list of sample objects
+
+            Returns:
+                pd.DataFrame: fitered variants 
+        """
+
         for sample in samples:
             
             if not hasattr(sample, "vcf_path_haplotypecaller"):
@@ -133,6 +145,14 @@ class VariantCallPipe(ParallelPipe):
             # TODO: add them to samples
                                      
     def buchiartificiali_filter(self, filtered_cds_vcf):
+        """ Remove from the VCF file, variants that fall in positions that are present in the buchiartificiali file.
+
+                Args:
+                    filtered_cds_vcf (pandas.DataFrame): dataframe containing the variants filtered by the BED file
+
+                Returns:
+                    pandas.DataFrame: dataframe with variants that fall outside the regions present in buchiartificiali
+        """
         buchiartificiali = pd.read_csv(self.BUCHIARTIFICIALI, sep='\t', header=0)
         
         for index, row in buchiartificiali.iterrows():
@@ -144,14 +164,16 @@ class VariantCallPipe(ParallelPipe):
         
         return filtered_cds_vcf           
             
-    def intersect(self, sample, vcf_type):
-        import pybedtools
-        a = pybedtools.BedTool(sample.vcf)
-        b = pybedtools.BedTool(sample.bed)
-        intersection = a.intersect(b, u=True)
+    # def intersect(self, sample, vcf_type):
+    #     import pybedtools
+    #     a = pybedtools.BedTool(sample.vcf)
+    #     b = pybedtools.BedTool(sample.bed)
+    #     intersection = a.intersect(b, u=True)
         
 
     def vcf_vertical_filter(self, sample, vcf_type):
+        """ Intersect withthe BED and BEDX files, which are transformed to verticals, so pandas.merge can be used."""
+
         vertical = sample['vertical']
         if type(vertical) is str:
             vertical = pd.read_csv(vertical, sep='\t')
@@ -292,16 +314,6 @@ class VariantCallPipe(ParallelPipe):
             sample["all_path"] = all_path
             sample["vcf_annot_CDS"] = vcf_annotate_CDS
 
-# # Instead of generating the bed and vertical, we read them, as they should already be present in their respective folders (generated by CoveragePipe)
-# bed_ = join(folder_pheno, 'bed_' + sample_name)
-# bed = pd.read_csv(bed_, sep='\t')
-# bedx_ = join(folder_pheno, 'bedX_' + sample_name)
-# bedx = pd.read_csv(bedx_, sep='\t')
-
-# vertical_ = join(folder_pheno, 'vertical_' + sample_name)
-# vertical = pd.read_csv(vertical_, sep='\t')
-# verticalx_ = join(folder_pheno, 'verticalX_' + sample_name)
-# verticalX = pd.read_csv(verticalx_, sep='\t')
 
 # if not vertical.empty:
 #     buchiartificiali = pd.read_csv(self.BUCHIARTIFICIALI,sep='\t',header=0)
