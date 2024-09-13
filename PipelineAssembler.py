@@ -21,6 +21,7 @@ from Pipes.InterStage import SampleListFam
 from Pipes.CoveragePipe import CoveragePipe2
 from Pipes.VariantCallPipe import VariantCallPipe
 from Pipes.AnnotationPipe import AnnotationPipe
+from Pipes.VariantFilterWrapperPipe import VariantFilterWrapperPipe
 
 
 class PipelineAssembler():
@@ -43,7 +44,7 @@ class PipelineAssembler():
         elif pipeline_type == "variantcall":
             return Pipeline(VariantCallPipe()).assemblePipe(AnnotationPipe()).assemblePipe(EndPipe())
         elif pipeline_type == "test":
-            return Pipeline(Setup()).assemblePipe(ResyncDBPipe()).assemblePipe(ReadFastQFilesPipe()).assemblePipe(ProcessPipe()).assemblePipe(SampleListFam()).assemblePipe(Fq2BamPipe()).assemblePipe(CoverageWrapperPipe()).assemblePipe(VariantCallPipe()).assemblePipe(EndPipe())
+            return Pipeline(Setup()).assemblePipe(ResyncDBPipe()).assemblePipe(ReadFastQFilesPipe()).assemblePipe(ProcessPipe()).assemblePipe(SampleListFam()).assemblePipe(Fq2BamPipe()).assemblePipe(CoverageWrapperPipe()).assemblePipe(VariantCallPipe()).assemblePipe(VariantFilterWrapperPipe()).assemblePipe(EndPipe())
     
     def independent_pipeline(pipeline_type):
         if pipeline_type == "coverage":

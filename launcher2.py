@@ -108,6 +108,7 @@ def parseInput():
 def tests():
     from Pipeline import Pipeline
     from Pipes.DiagnosysCorePipe import CoverageWrapperPipe
+    from Pipes.VariantFilterWrapperPipe import VariantFilterWrapperPipe
     from Pipes.VariantCallPipe import VariantCallPipe
     from Pipes.InputPipe import Setup
 
@@ -115,11 +116,13 @@ def tests():
     # from Pipes.InputPipe import Setup
     # setup = Setup()
     # kwargs = setup.process(**vars(args))
+
     #testPipelineOut = PipelineAssembler().factory('test').start(**vars(args))
-    Pipeline(Setup()).assemblePipe(CoverageWrapperPipe()).start(**vars(args))
+    #Pipeline(Setup()).assemblePipe(CoverageWrapperPipe()).start(**vars(args))
     #Pipeline(Setup()).assemblePipe(VariantCallPipe()).start(**vars(args))
-    
-    # processPipelineOut = PipelineAssembler().factory('process').start(**vars(args))
+    Pipeline(Setup()).assemblePipe(VariantFilterWrapperPipe()).start(**vars(args))
+
+    #processPipelineOut = PipelineAssembler().factory('process').start(**vars(args))
     
 
 if __name__ == "__main__":

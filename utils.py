@@ -4,6 +4,15 @@ import os
 import json
 
 
+def define_vcf_paths(sample_id, dir_tree):
+    vcf_dir = dir_tree.principal_directory.vcf.path
+    return {
+            "haplotypecaller_intronic_vcf_path" : os.path.join(vcf_dir, "{}_unfied_all.vcf".format(sample_id)),
+            "haplotypecaller_cds_vcf_path" : os.path.join(vcf_dir, "{}_unfied_only_CDS.vcf".format(sample_id)),
+            "deepvariant_intronic_vcf_path" : os.path.join(vcf_dir, "{}_samt_all.vcf".format(sample_id)),
+            "deepvariant_cds_vcf_path": os.path.join(vcf_dir, "{}_samt_only_CDS.vcf".format(sample_id))
+            }
+
 def get_buchiartificiali():
     import pandas as pd
     return pd.read_csv(config.BUCHIARTIFICIALI, sep="\t", header=0)

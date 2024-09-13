@@ -400,6 +400,7 @@ class CoveragePipeTest(Pipe):
         print ('Len disease: ',len(b))
 
 
+    
 
     def get_bam_filename(self):
         sample = self.sample

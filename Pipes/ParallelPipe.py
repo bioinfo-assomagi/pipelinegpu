@@ -10,7 +10,6 @@ import utils
 class ParallelPipe(Pipe):
 
     def __init__(self):
-        self.thread_id = None
         super().__init__()
 
     def process(self, **kwargs):

@@ -198,6 +198,7 @@ class UnzipFastQFilesPipe(Pipe):
         #utils.thread_print(self.thread_id, "Inside UnzipFastQFilesPipe pipe. List of fastq_files = {}".format(fastq_files))
         unizzped_fastq_files = self.unzip_fastq(fastq_files)
         utils.thread_print(self.thread_id, "Inside UnzipFastQFilesPipe pipe. List of unizzped_fastq_files = {}".format(unizzped_fastq_files))
+        # TODO: replace by self.thread_print?
         kwargs.update({"fastq_folder": fastq_folder, "fastq_files": unizzped_fastq_files, "thread_id": self.thread_id})
         return kwargs
 
