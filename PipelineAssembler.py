@@ -45,7 +45,9 @@ class PipelineAssembler():
             return Pipeline(VariantCallPipe()).assemblePipe(AnnotationPipe()).assemblePipe(EndPipe())
         elif pipeline_type == "test":
             return Pipeline(Setup()).assemblePipe(ResyncDBPipe()).assemblePipe(ReadFastQFilesPipe()).assemblePipe(ProcessPipe()).assemblePipe(SampleListFam()).assemblePipe(Fq2BamPipe()).assemblePipe(CoverageWrapperPipe()).assemblePipe(VariantCallPipe()).assemblePipe(VariantFilterWrapperPipe()).assemblePipe(EndPipe())
-    
+        elif pipeline_type == "bamstart":
+            return Pipeline(Setup()).assemblePipe(ResyncDBPipe()).assemblePipe(CoverageWrapperPipe()).assemblePipe(VariantCallPipe()).assemblePipe(VariantFilterWrapperPipe()).assemblePipe(EndPipe())
+
     def independent_pipeline(pipeline_type):
         if pipeline_type == "coverage":
             return Pipeline(Setup()).assemblePipe(CoveragePipe2())

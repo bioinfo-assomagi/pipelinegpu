@@ -224,7 +224,7 @@ class VariantFilterPipe(ParallelPipe):
 
         mask1 = ALL['INFO'].isnull()
         #ALL.loc[mask1,'INFO'] = ALL['INFO_gatk']
-        ALL.loc[mask1, 'INFO'] = CDS.loc[mask1].apply(
+        ALL.loc[mask1, 'INFO'] = ALL.loc[mask1].apply(
              lambda row: ';'.join(
                 [f"{key}={value}" for key, value in zip(row['FORMAT_samt'].split(':'), row["{}_samt".format(sample_name)].split(':'))]
                                   ), axis=1)

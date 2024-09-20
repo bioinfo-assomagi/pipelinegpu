@@ -5,9 +5,6 @@ import sys
 
 import config as config
 from PipelineAssembler import PipelineAssembler
-import utils
-import math
-import coverage_async
 import tests
 
 def parseInput():
@@ -90,6 +87,8 @@ def parseInput():
     parser.add_argument('-backup', '--backup', metavar='Choose if make BackUp or Not', choices=['False', 'True'],
                         default='True',
                         help='Default False = Not Backup, put True = Backup')
+    
+    # parser.add_argument('-type', '--pipelinetype', metabar='What type of pipeline do you want to run?')
 
     return parser.parse_args()
 
@@ -111,16 +110,29 @@ def tests():
     from Pipes.VariantFilterWrapperPipe import VariantFilterWrapperPipe
     from Pipes.VariantCallPipe import VariantCallPipe
     from Pipes.InputPipe import Setup
+    from Pipes.DiagnosysCorePipe import ResyncDBPipe
+    from Pipes.InterStage import SampleListFam
 
     args = parseInput()
     # from Pipes.InputPipe import Setup
     # setup = Setup()
     # kwargs = setup.process(**vars(args))
 
-    #testPipelineOut = PipelineAssembler().factory('test').start(**vars(args))
-    #Pipeline(Setup()).assemblePipe(CoverageWrapperPipe()).start(**vars(args))
+    pipeline_type = config.PIPELINETYPE
+
+    if pipeline_type == 'setup':
+        print("Im in setup...")
+        Pipeline(Setup()).start(**vars(args))
+    elif pipeline_type == 'bamstart':
+        PipelineAssembler().factory('bamstart').start(**vars(args))
+    elif pipeline_type == 'test':
+        PipelineAssembler().factory('test').start(**vars(args))
+    elif pipeline_type == 'coverage':
+        print("Im in coverage ...")
+        Pipeline(Setup()).assemblePipe(ResyncDBPipe()).assemblePipe(SampleListFam()).assemblePipe(CoverageWrapperPipe()).start(**vars(args))
+        
     #Pipeline(Setup()).assemblePipe(VariantCallPipe()).start(**vars(args))
-    Pipeline(Setup()).assemblePipe(VariantFilterWrapperPipe()).start(**vars(args))
+    #Pipeline(Setup()).assemblePipe(VariantFilterWrapperPipe()).start(**vars(args))
 
     #processPipelineOut = PipelineAssembler().factory('process').start(**vars(args))
     
@@ -132,40 +144,6 @@ if __name__ == "__main__":
 
     tests()
     
-    # pipelineAssembler = PipelineAssembler()
-    # resource_pipeline_out = pipelineAssembler.factory('resource').start(**vars(args))
-    # fastq_files = resource_pipeline_out['fastq_files']
-
-    # kwargs = resource_pipeline_out
-    # kwargs.update({"fastq_files": fastq_files})
-
-
-    # start = time.time()
-     
-    # # TODO: redesign the concurrency, at least for the coverage pipeline. No need to assemble a seperate pipeline, put perform the parallelization inside the CoveragePipe
-
-    # # TODO: run in parallel maybe should return a set of queues, with the different outputs (written files, directories, etc.) that can be used by the next steps of the pipeline
-    # # For example, InterstagePipe gets the sample by using glob.glob on the pirnicpal_directory, but it would be better if InterstagePipe reads from the queue
-    # # so the actual files are passed directly from firstPipe, to interstagePipe, without having to hardcode the name on the files to search with glob
-    # if len(fastq_files) == 0:
-    #     print("No fastq files were read from the server!")
-    #     sys.exit()
-   
-    # samples_queue = run_in_parallel(num_threads=int(len(fastq_files) / 2), **kwargs)
-    # #run_in_parallel(fastq_files=["test/E378.2023_R1_001.fastq", "test/E378.2023_R2_001.fastq", "test/E379.2023_R1_001.fastq", "test/E379.2023_R2_001.fastq", "test/E380.2023_R1_001.fastq", "test/E380.2023_R2_001.fastq"])
     
-    
-    # print("\033[92mEntering NVIDIA Parabricks ...")
-    # """ fq2bam will run non-concurrently. fq2bam will start after fastx for every sample is completed. """
-    # kwargs.update({"resynced_samples": samples_queue})
-    # fq2bam_out = pipelineAssembler.factory('fq2bam').start(**kwargs)
-    # print("\033[0m")
-    
-    # kwargs = fq2bam_out
-    # coverage_queue = coverage_async.run(**kwargs)
-    # while not coverage_queue.empty():
-    #     if coverage_queue.empty():
-    #         break
-    #     print(coverage_queue.get())
 
 

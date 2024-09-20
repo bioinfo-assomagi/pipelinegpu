@@ -50,7 +50,10 @@ class VariantCallPipe():
 
         for sample in samples:
             sample_name = str(sample.name)
-            bam_filename = sample.bam.split('/')[-1]
+            try: 
+                bam_filename = sample.bam.split('/')[-1]
+            except Exception as e:
+                raise("In variant calling pipe, BAM file coulnd not be found for sample {}".format(sample_name))
 
             command = ' '.join(['docker', 'run', '--gpus', 'all', '--rm',
                                 '--volume', "{}/:{}".format(config.REF, config.DOCKER_REFDIR),
@@ -74,7 +77,10 @@ class VariantCallPipe():
 
         for sample in samples:
             sample_name = str(sample.name)
-            bam_filename = sample.bam.split('/')[-1]
+            try: 
+                bam_filename = sample.bam.split('/')[-1]
+            except Exception as e:
+                raise("In variant calling pipe, BAM file coulnd not be found for sample {}".format(sample_name))
 
             command = ' '.join(['docker', 'run', '--gpus', 'all', '--rm', 
                                 '--volume', "{}/:{}".format(config.REF, config.DOCKER_REFDIR), 

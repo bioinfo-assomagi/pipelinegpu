@@ -18,6 +18,7 @@ class CoveragePipeTest(Pipe):
     def process(self, **kwargs):
         self.panel = kwargs.pop("panel")
         self.sample = kwargs.pop("sample")
+        self.sample.temp_dir = os.path.join(dir_tree.principal_directory.temp.path, str(self.sample.name))
         dest = kwargs.pop("dest")
         
         
@@ -35,10 +36,16 @@ class CoveragePipeTest(Pipe):
         self.count_unbalance()
         count_disease, count_sex = self.merge_chunks()
         self.summary_disease(count_disease)
+        self.summary_sex(count_sex)
         self.summary_macroarea()
+        self.clean_temp_dir()
 
         kwargs.update({"panel": self.panel, "sample": self.sample, "dest": dest}) # only if donwstream pipes of the same thread will be present
         return kwargs
+
+
+    def clean_temp_dir(self):
+        pass
 
     def load_prereq(self):
         #self.vertical_df, self.verticalX_df, self.vertical_macro_df = self.get_vertical_dataframes()
@@ -48,13 +55,18 @@ class CoveragePipeTest(Pipe):
         else:
             print("No vertical_macro for panel {}".format(self.panel))
             self.vertical_macro_df = None
-        self.buchiartificali = utils.get_buchiartificiali()
+        self.buchiartificali = utils.get_buchiartificiali()             
         
 
     def count_unbalance(self):
         sample_name = str(self.sample.name)
-        if self.sample.bam is None:
-            raise Exception("No bam file for sample {}".format(sample_name))
+        try:
+            bam = self.sample.bam
+        except Exception as e:
+            raise("In coverage analysis, no bam file for sample {}".format(sample_name))
+        
+        # if self.sample.bam is None:
+        #     raise Exception("No bam file for sample {}".format(sample_name))
         
         bam = self.sample.bam
         mpileup_out = os.path.join(dir_tree.principal_directory.temp.path, sample_name + "_to_count")
@@ -205,7 +217,6 @@ class CoveragePipeTest(Pipe):
         os.system(" ".join(["cat", sex_filenames, ">", final_sex_filename]))
         count_sex = pd.read_csv(final_sex_filename, sep="\t", header=None, names=cols)
         count_sex.fillna(0, inplace=True)
-
         return count_disease, count_sex
 
     
@@ -400,6 +411,13 @@ class CoveragePipeTest(Pipe):
         print ('Len disease: ',len(b))
 
 
+    def summary_sex(self, count_sex):
+        """ In this case, summary_sex is equal to count_sex. """
+        coverage_dir = dir_tree.principal_directory.coverage.path
+        sample_dir = str(self.sample.name)
+        
+        print("Sending {}_finalsex to coverage dir ...".format(str(self.sample.name)))
+        count_sex.to_csv(os.path.join(coverage_dir, sample_dir, "{}_final_sex".format(str(self.sample.name))), sep="\t", index=False)
     
 
     def get_bam_filename(self):
@@ -416,14 +434,27 @@ class CoveragePipeTest(Pipe):
         )
         # Additional processing ... TODO
 
+        sospetto = self.phenotype["malattia"][self.phenotype["sample"].astype(str) == str(self.sample.name)].unique()[0]
+        if sospetto == "CONNETTIVOPATIE":
+            region = pd.DataFrame({'#CHROM':pd.Series(['chr9','chr9','chr9','chr9','chr9','chr9','chr9','chr9','chr9','chr9','chr9','chr9','chr9','chr9','chr9']),
+                                    'START':pd.Series([86584322,86585077,86585812,86585652,86586188,86586587,86586797,86587759,86588201,86588817,86589432,86590377,86591910,86592604,86593110]),
+                                    'END':pd.Series([86584355,86585246,86585827,86585734,86586271,86586641,86587104,86587887,86588314,86588888,86589504,86590420,86591966,86592701,86593167]),
+                                    'GENE':pd.Series(['int','int','int','int','int','int','int','int','int','int','int','int','int','int','int']),
+                                    'length':pd.Series([34,170,16,83,84,55,308,129,114,72,73,44,57,98,58]),
+                                    'exone':pd.Series([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]),'strand':pd.Series([1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]),
+                                    'refseq':pd.Series(['N','N','N','N','N','N','N','N','N','N','N','N','N','N','N']),
+                                    'hgmd':pd.Series(['int','int','int','int','int','int','int','int','int','int','int','int','int','int','int'])})
+        elif sospetto == "CROMATINOPATIE":
+            region = pd.DataFrame({'#CHROM':pd.Series(['chr11','chr12','chr15','chr15','chr15','chr15','chr16','chr16','chr22','chr3','chr3','chr3','chr5','chr5','chr7','chr7','chr7','chr7','chr7','chr7','chr3','chr22','chr22','chr22','chr22','chr22','chr22','chrX']),
+                                    'START':pd.Series([119077253,112910723,66995991,66995821,67001018,96875310,30134513,55515763,19770411,20202572,20202683,8591535,78280735,78280904,140624418,150693467,150700214,150700331,150700720,150700214,20216072,19748403,19753887,19754000,19754265,19754305,19444417,136649004]),
+                                    'END':pd.Series([119077347,112910816,66996065,66995870,67001101,96875443,30134555,55515815,19770570,20202743,20202743,8591605,78280783,78280957,140624528,150693561,150700516,150700413,150700808,150700494,20216167,19748627,19754144,19754071,19754311,19754311,19444466,136649122]),
+                                    'GENE':pd.Series(['CBL','PTPN11','int','SMAD6','int','NR2F2','MAPK3','int','int','int','int','int','int','ARSB','BRAF','NOS3','int','int','int','int','SGOL1','TBX1','TBX1','int','int','int','UFD1L','ZIC3']),
+                                    'length':pd.Series([95,94,75,50,84,134,43,53,160,172,61,71,49,54,111,95,303,83,89,281,96,225,258,72,47,7,50,119]),
+                                    'exone':pd.Series([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]),
+                                    'strand':pd.Series([1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]),
+                                    'refseq':pd.Series(['N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N','N']),
+                                    'hgmd':pd.Series(['int','int','int','int','int','int','int','int','int','int','int','int','int','int','int','int','int','int','int','int','int','int','int','int','int','int','int','int'])})
+
+
+
         return vertical, verticalX, BED
-
-    def build_bed(self, genelist, folder_pheno, server_id):
-        import cutCDS_jurgen
-        sample = self.sample
-        folder_pheno = dir_tree.principal_directory.pheno.path
-        BED, vertical = cutCDS_jurgen.build_bed(
-            genelist, sample, folder_pheno, server_id
-        )
-
-        return vertical, None, BED

@@ -25,6 +25,7 @@ class Setup(Pipe):
         over = kwargs.pop('over', True)
         dest = kwargs.pop('dest')
         proj_name = kwargs.pop('project', None)
+        # TODO: take fastq names so you can build the phenotype file
     
 
         #TODO: add logging 
@@ -37,6 +38,8 @@ class Setup(Pipe):
 
         dir_tree.build(principal_directory)
         print(dir_tree.principal_directory)
+
+        #TODO: create the phenotype file here
         kwargs.update({"proj_name": proj_name, "panel": panel, "path": path, "genome": genome, "over": over, "principal_directory": principal_directory, "dest": dest})
         #print(kwargs)
         return kwargs
