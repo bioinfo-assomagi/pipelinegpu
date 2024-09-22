@@ -1,0 +1,114 @@
+{
+    "name": "dummy",
+    "type": "folder",
+    "children": [
+        {
+            "name": "sample_data",
+            "type": "folder"
+        },
+        {
+            "name": "fastq",
+            "type": "folder"
+        },
+        {
+            "name": "bam",
+            "type": "folder",
+            "children": [
+                {
+                    "name": "inalaysis",
+                    "type": "folder"
+                }
+            ]
+        },
+        {
+            "name": "control",
+            "type": "folder"
+        },
+        {
+            "name": "annotation",
+            "type": "folder",
+            "children": [
+                
+            ]
+        },
+        {
+            "name": "fastqfiltered",
+            "type": "folder"
+        },
+        {
+            "name": "pheno",
+            "type": "folder",
+            "children": [
+               
+            ]
+        },
+        {
+            "name": "indel",
+            "type": "folder",
+            "children": [
+                
+            ]
+        },
+        {
+            "name": "phase",
+            "type": "folder"
+        },
+        {
+            "name": "plot",
+            "type": "folder"
+        },
+        {
+            "name": "vcf",
+            "type": "folder"
+        },
+        {
+            "name": "somatic",
+            "type": "folder",
+            "children": [
+                
+            ]
+        },
+        {
+            "name": "coverage",
+            "type": "folder"
+        },
+        {
+            "name": "fastQC",
+            "type": "folder"
+        },
+        {
+            "name": "final",
+            "type": "folder"
+        },
+        {
+            "name": "log",
+            "type": "folder"
+        },
+        {
+            "name": "report",
+            "type": "folder"
+        },
+        {
+            "name": "parabricks_input",
+            "type": "folder"
+        },
+        {
+            "name": "parabricks_output",
+            "type": "folder"
+        },
+        {
+            "name": "temp",
+            "type": "folder",
+            "children": [
+                {
+                    "name": "to_count",
+                    "type": "folder"
+                },
+                {
+                    "name": "to_macroarea",
+                    "type": "folder"
+                }
+            ]
+        }
+    ]
+}
