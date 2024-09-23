@@ -10,10 +10,15 @@ CONFIGNAME = os.path.join(ROOT_DIR, 'config.cfg')  # not really used at all
 
 def _get_cfg(cfg):
     if os.path.exists(cfg):
-        # 1) is it already an accessible file?
+        # 1) is it already an accessible file? ::: if a config.cfg is already in the path from where you are executing the pipeline (many times 
+        # bin/diagnosys_pipleline.py which in turn calls bin_jurgen/launcher2.py, will be executed) it will get that config.cfg. e.g.
+        # since the cfg argument is specified inside the CustomConfigParser constructor and is set to be just "config.cfg"
+        # if there is such named filed inside the calling directory (e.g. PROJECT/diagnosys/) it will point there. i.e. enter in this condition
+        # and proceed reading the config.cfg already in PROJECT/diagnosys/
         pass
     elif os.path.exists(os.path.join(ROOT_DIR, cfg)):
-        # 2) search GENEMAGI
+        # 2) search in the execution directory ::: it will always loook for bin_jurgen/config.cfg
+        # it will enter this condition if there is no config.cfg file in the e.g. /PROJECT/diagnosys/ directory
         return os.path.join(ROOT_DIR, cfg)
     else:
         raise ValueError("Failed to locate config file {}".format(cfg))
@@ -101,12 +106,12 @@ class CustomConfigParser():
 
         return configuration
 
-    def get_configuration(filename=CONFIGNAME):  # not used, globals updated when the file is imported
-        """Reads and parses the configuration file."""
-        cfg = CustomConfigParser(filename=filename)  # update module-level cfg
-        globals().update(cfg.configuration)  # update configdir, templatesdir ...
-        #configuration = cfg.configuration          # update module-level configuration
-        return cfg
+    # def get_configuration(filename=CONFIGNAME):  # not used, globals updated when the file is imported
+    #     """Reads and parses the configuration file."""
+    #     cfg = CustomConfigParser(filename=filename)  # update module-level cfg
+    #     globals().update(cfg.configuration)  # update configdir, templatesdir ...
+    #     #configuration = cfg.configuration          # update module-level configuration
+    #     return cfg
 
 
 

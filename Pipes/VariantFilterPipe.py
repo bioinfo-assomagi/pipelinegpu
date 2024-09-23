@@ -68,7 +68,17 @@ class VariantFilterPipe(ParallelPipe):
         
         filter_cds_vcf_haplotypecaller = self.buchiartificiali_filter(filter_cds_vcf_haplotypecaller)
         filter_cds_vcf_deepvariant = self.buchiartificiali_filter(filter_cds_vcf_deepvariant)
-                
+
+        # Remove 0/0 from deepvariant results
+        filter_cds_vcf_deepvariant['genotype'] = filter_cds_vcf_deepvariant[str(self.sample.name)].str.split(':').str[0]
+        filter_intronic_vcf_deepvariant['genotype'] = filter_intronic_vcf_deepvariant[str(self.sample.name)].str.split(':').str[0]
+        self.thread_print("Removing low quality vcfs from deepvariant ... ")
+        filter_cds_vcf_deepvariant = filter_cds_vcf_deepvariant[(~filter_cds_vcf_deepvariant['genotype'].isin(['./.', '0/0'])) & (filter_cds_vcf_deepvariant['QUAL'] != 0.0)]
+        filter_intronic_vcf_deepvariant = filter_intronic_vcf_deepvariant[(~filter_intronic_vcf_deepvariant['genotype'].isin(['./.', '0/0'])) & (filter_intronic_vcf_deepvariant['QUAL'] != 0.0)]
+        
+        filter_cds_vcf_deepvariant = filter_cds_vcf_deepvariant.drop('genotype', axis = 1)
+        filter_intronic_vcf_deepvariant = filter_intronic_vcf_deepvariant.drop('genotype', axis = 1)
+
 
         vcf_paths = utils.define_vcf_paths(self.sample.name, dir_tree)
 
