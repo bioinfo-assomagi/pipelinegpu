@@ -32,10 +32,10 @@ def parseInput():
                         default='geno38',
                         help='Choices: geno37, geno38 - Run Analysis with genome GRCh38 or GRCh37')
 
-    parser.add_argument('-q', '--quality', metavar='PHRED QUALITY FILTER', default=18,
+    parser.add_argument('-q', '--quality', metavar='PHRED QUALITY FILTER', default=25,
                         help=' Choose a quality threshold [Default = 18]')
 
-    parser.add_argument('-Q', '--quality_perc', metavar='PERC QUALITY READ', default=97,
+    parser.add_argument('-Q', '--quality_perc', metavar='PERC QUALITY READ', default=90,
                         help='Percentual of quality for read [Default = 97]')
 
     parser.add_argument('-N', '--threads', metavar='THREADS', default='12',

@@ -108,7 +108,7 @@ class ResyncDBPipe(Pipe):
         print("Resyncing DB ...")
         db_server = utils.get_db_server(server_id)
         local_db_path = utils.get_db_path(server_id)
-        #os.system("rsync -avz -e ssh {} {}".format(db_server, config.DB_PATH))
+        os.system("rsync -avz -e ssh {} {}".format(db_server, config.DB_PATH))
 
         kwargs.update({"dest": server_id, "db_path": local_db_path})
         return kwargs
@@ -254,6 +254,7 @@ class ProcessFastQFilesPipe2(Pipe):
         threads = kwargs.pop("threads")
         quality = kwargs.pop("quality")
         quality_perc = kwargs.pop("quality_perc")
+        print("GPU Pipeline: quality = {}, quality_perc = {}".format(quality, quality_perc))
         self.thread_id = kwargs.pop("thread_id")
 
         fastqc_folder = join(principal_directory, 'fastQC/')
@@ -351,7 +352,8 @@ class SetSamplesPipe(ParallelPipe):
             s.saveJSON()
 
 
-""" Pipes that runs the resync of fastq files. Additionally, manipulates filenames and file organization to remove temp files, as well as to prepare it for Parabricks. """
+""" Pipes that runs the resync of fastq files, it takes as input the fastq files present in the sample_list.csv. 
+Additionally, manipulates filenames and file organization to remove temp files, as well as to prepare it for Parabricks. """
 class PreAlignmentPipe(Pipe):
 
     def __init__(self) -> None:
@@ -388,6 +390,9 @@ class PreAlignmentPipe(Pipe):
         forward = sample['forward']
         reverse = sample['reverse']
 
+        print("Syncing read: {}".format(forward))
+        print("Syncing read: {}".format(reverse))
+
         #utils.thread_print(self.thread_id, sample)
 
         try:
@@ -419,9 +424,9 @@ class PreAlignmentPipe(Pipe):
             os.system(' '.join(['mv', pairs_forward, parabricks_input_directory]))
             os.system(' '.join(['mv', pairs_reverse, parabricks_input_directory]))
 
-            os.system(' '.join(['rm', forward]))
-            os.system(' '.join(['rm', reverse]))
-            os.system(' '.join(['rm', singles_forward]))
+            # os.system(' '.join(['rm', forward]))
+            # os.system(' '.join(['rm', reverse]))
+            # os.system(' '.join(['rm', singles_forward]))
             
             """NOTE: POTENTIAL FOR HIGH COUPLING BETWEEN DOCKER AND LOCAL DIRECTORY NAMES. THINK OF A BETTER SOLUTION! """
             docker_input_parabricks = os.path.join(config.DOCKER_WORKDIR, 'parabricks_input')
