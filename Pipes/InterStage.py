@@ -18,6 +18,9 @@ class SampleListFam(Pipe):
     def __init__(self) -> None:
         super().__init__()
 
+    # TODO: sample_list.csv will have to be built. i.e. merging all the other sample_list_threadid.csv into one big csv. 
+    # It will later be used by kiniship.test.
+    # NOTE: when kinship_test.py will be implemented inside this pipeline, there will be no need for sample_list.csv anymore.  
     def process(self, **kwargs):
        
         db_path = kwargs.pop('db_path', None)

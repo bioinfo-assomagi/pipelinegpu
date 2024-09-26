@@ -119,6 +119,7 @@ def tests():
     # kwargs = setup.process(**vars(args))
 
     pipeline_type = config.PIPELINETYPE
+    print("Pipeline type = {}".format(pipeline_type))
 
     if pipeline_type == 'setup':
         print("Im in setup...")
@@ -127,6 +128,8 @@ def tests():
         PipelineAssembler().factory('bamstart').start(**vars(args))
     elif pipeline_type == 'test':
         PipelineAssembler().factory('test').start(**vars(args))
+    elif pipeline_type == 'vcf_first':
+        PipelineAssembler().factory('vcf_first').start(**vars(args))
     elif pipeline_type == 'coverage':
         print("Im in coverage ...")
         Pipeline(Setup()).assemblePipe(ResyncDBPipe()).assemblePipe(SampleListFam()).assemblePipe(CoverageWrapperPipe()).start(**vars(args))
@@ -142,8 +145,11 @@ if __name__ == "__main__":
     
     print("Currently unavailable. Coming back soon ... ")
 
+    start_time = time.time()
     tests()
-    
+    end_time = time.time()
+
+    print("bin_jurgen, up to VEP annotation took {}.".format(end_time - start_time))
     
 
 

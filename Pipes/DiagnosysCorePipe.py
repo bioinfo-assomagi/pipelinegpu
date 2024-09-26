@@ -108,7 +108,7 @@ class ResyncDBPipe(Pipe):
         print("Resyncing DB ...")
         db_server = utils.get_db_server(server_id)
         local_db_path = utils.get_db_path(server_id)
-        os.system("rsync -avz -e ssh {} {}".format(db_server, config.DB_PATH))
+        #os.system("rsync -avz -e ssh {} {}".format(db_server, config.DB_PATH))
 
         kwargs.update({"dest": server_id, "db_path": local_db_path})
         return kwargs
@@ -158,8 +158,13 @@ class ReadFastQFilesPipe(Pipe):
             if server_id == 'r':
                 #files_fq = os.system(' '.join(['scp root@192.168.2.188:/sharedfolders/NGS/tmp/analysis/germinal/*', fastq_folder])) #added
                 #files_fq = os.system(' '.join(['s *', fastq_folder]))  # added
+                # files_fq = os.system(
+                #     ' '.join(['scp root@192.168.1.51:/home/NGS/tmp/analysis/germinalprot/*.fastq.gz*', fastq_folder]))
+                
                 files_fq = os.system(
-                    ' '.join(['scp root@192.168.1.51:/home/NGS/tmp/analysis/germinalprot/*.fastq.gz*', fastq_folder]))
+                    ' '.join(['scp root@192.168.1.51:/home/NGS/RAW/ROVERETO/28_May_2024_OCULARE/*.fastq.gz*', fastq_folder]))
+                    
+
             else:
                 files_fq = os.system(
                     ' '.join(['scp root@192.168.1.51:/home/NGS/tmp/analysis/germinalprot/*.fastq.gz', fastq_folder]))  # added
@@ -455,7 +460,7 @@ class ProcessPipe(Pipe):
     
     def process(self, **kwargs):
 
-        with multiprocessing.Pool(16) as pool:
+        with multiprocessing.Pool(32) as pool:
             pool.map(self.worker, self.prepare_args(**kwargs))
             pool.close()
             pool.join()
@@ -491,7 +496,7 @@ class CoverageWrapperPipe(Pipe):
 
     def process(self, **kwargs):
 
-        with multiprocessing.Pool(16) as pool:
+        with multiprocessing.Pool(32) as pool:
             pool.map(self.worker, self.prepare_args(**kwargs))
             pool.close()
             pool.join()
