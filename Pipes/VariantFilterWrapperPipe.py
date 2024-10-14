@@ -22,7 +22,8 @@ class VariantFilterWrapperPipe(Pipe):
 
         return kwargs
 
-    def worker(self, kwargs):
+    def worker(self, kwargs): # TODO: let's add the subsequent pipes here? And change the name from VariantFilterWrapper to something else? And launch or the remianing steps
+        # as a Pipeline itself, that will lead to multiple Pipelines being launched in parallel.
         Pipeline(VariantFilterPipe()).start(**kwargs)
 
     def prepare_args(self, **kwargs):

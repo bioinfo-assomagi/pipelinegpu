@@ -26,12 +26,12 @@ class SampleListFam(Pipe):
         db_path = kwargs.pop('db_path', None)
         
 
-        #sample_list_files = glob.glob("{}/sample_list_*.csv".format(dir_tree.principal_directory.path)) # TODO: sample_list files can also be passed in the queue
-        #merged_samples_df = utils.merge_csv(sample_list_files)
+        # Create the merged sample_list.csv from the sample_list of each thread (named sample_list_<thread_id>.csv)
+        sample_list_files = glob.glob("{}/sample_list_*.csv".format(dir_tree.principal_directory.path)) # TODO: sample_list files can also be passed in the queue
+        merged_samples_df = utils.merge_csv(sample_list_files)
 
-
-        #merged_samples_df.to_csv(os.path.join(dir_tree.principal_directory.path, 'sample_list.csv'), sep='\t', index=False, encoding='utf-8')
-        #sample_list = merged_samples_df['name'].tolist()
+        merged_samples_df.to_csv(os.path.join(dir_tree.principal_directory.path, 'sample_list.csv'), sep='\t', index=False, encoding='utf-8')
+        sample_list = merged_samples_df['name'].tolist()
 
         sample_jsons = glob.glob(os.path.join(dir_tree.principal_directory.sample_data.path, "*.json"))
         samples = [Sample.fromJSON(json_file) for json_file in sample_jsons]
