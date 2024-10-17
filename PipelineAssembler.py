@@ -13,6 +13,7 @@ from Pipes.DiagnosysCorePipe import SetSamplesPipe
 from Pipes.DiagnosysCorePipe import ResyncDBPipe
 from Pipes.DiagnosysCorePipe import ProcessPipe
 from Pipes.DiagnosysCorePipe import CoverageWrapperPipe
+from Pipes.ParallelWrapper import ParallelWrapper
 
 from Pipes.EndPipe import EndPipe
 from Pipes.StartPipe import StartPipe
@@ -20,7 +21,7 @@ from Pipes.Fq2BamPipe import Fq2BamPipe
 from Pipes.InterStage import SampleListFam
 from Pipes.CoveragePipe import CoveragePipe2
 from Pipes.VariantCallPipe import VariantCallPipe
-from Pipes.AnnotationPipe import AnnotationPipe
+#from Pipes.AnnotationPipe import AnnotationPipe
 from Pipes.VariantFilterWrapperPipe import VariantFilterWrapperPipe
 
 
@@ -42,7 +43,8 @@ class PipelineAssembler():
         elif pipeline_type == "coverage":
             return Pipeline(CoveragePipe2()).assemblePipe(EndPipe())
         elif pipeline_type == "variantcall":
-            return Pipeline(VariantCallPipe()).assemblePipe(AnnotationPipe()).assemblePipe(EndPipe())
+            #return Pipeline(VariantCallPipe()).assemblePipe(AnnotationPipe()).assemblePipe(EndPipe())
+            pass
         elif pipeline_type == "test":
             return Pipeline(Setup()).assemblePipe(ResyncDBPipe()).assemblePipe(ReadFastQFilesPipe()).assemblePipe(ProcessPipe()).assemblePipe(SampleListFam()).assemblePipe(Fq2BamPipe()).assemblePipe(CoverageWrapperPipe()).assemblePipe(VariantCallPipe()).assemblePipe(VariantFilterWrapperPipe()).assemblePipe(EndPipe())
         elif pipeline_type == "vcf_first":
@@ -55,3 +57,7 @@ class PipelineAssembler():
             return Pipeline(Setup()).assemblePipe(CoveragePipe2())
         elif pipeline_type == "fq2bam":
             return Pipeline(Setup()).assemblePipe(SampleListFam()).assemblePipe(Fq2BamPipe()).assemblePipe(EndPipe())
+
+    def GetParentPipeline():
+        pass
+        

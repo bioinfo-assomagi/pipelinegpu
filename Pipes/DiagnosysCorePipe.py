@@ -174,7 +174,7 @@ class ReadFastQFilesPipe(Pipe):
             # fastq_folder]))
 
         copied_fastq_files = glob.glob(fastq_folder + '*')
-
+                
         return copied_fastq_files
 
     

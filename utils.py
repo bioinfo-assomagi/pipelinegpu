@@ -114,7 +114,9 @@ def group_samples(fastq_files):
 
     for fastq_file in fastq_files:
         sample_name = fastq_file.split("/")[-1].split("_")[0]
-
+        print("'\033[95m' Inside group_samples; fastq_file = {} '\033[0m'".format(fastq_file))
+        print("'\033[95m' Sample name = {} '\033[0m'".format(sample_name))
+        print("Sample dict = {}".format(sample_dict))
         if sample_name not in sample_dict:
             sample_dict[sample_name] = {
                 "name": str(sample_name),
@@ -122,9 +124,11 @@ def group_samples(fastq_files):
                 "reverse": None,
             }
 
-        if "R1" in fastq_file:
+        if "R1_" in fastq_file.split("/")[-1]:
+            print("Entered: R1 is in the fastq_file")
             sample_dict[sample_name]["forward"] = fastq_file
-        elif "R2" in fastq_file:
+        elif "R2_" in fastq_file.split("/")[-1]:
+            print("Entered: R2 is in the fastq_file")
             sample_dict[sample_name]["reverse"] = fastq_file
 
     return sample_dict
