@@ -36,10 +36,16 @@ class AnnotationPipe(Pipe):
 
         self.sample.saveJSON()
 
-        kwargs.update({"principal_directory": self.principal_directory, "samples": self.samples, "genome_type": self.genome_type, "panel": self.panel})
+        kwargs.update({"principal_directory": self.principal_directory, "sample": self.sample, "genome_type": self.genome_type, "panel": self.panel})
         return kwargs
 
     def final_annotation(self):
+        APPRIS = pd.read_csv(config.APPRIS, sep="\t")
+        ECCEZIONI = pd.read_csv(config.ECCEZIONI, sep="\t")
+
+        APPRIS['nm_refseq'] = APPRIS['refseq'].str.split(".").str.get(0)
+        ECCEZIONI['nm_refseq'] = ECCEZIONI['refseq'].str.split(".").str.get(0)
+
         folder_COV = dir_tree.principal_directory.coverage.path
         sample_name = str(self.sample.name)
         coverage = pd.read_csv(os.path.join(folder_COV, sample_name, sample_name + "_all"), sep='\t', header=0)
@@ -52,47 +58,45 @@ class AnnotationPipe(Pipe):
         cds_coverage_eredita = pd.merge(cds_coverage, eredita, on=['GENE'], how='left')
 
         result = cds_coverage_eredita
-        info_split = result['INFO'].str.split('CSQ=') #  LHS of CSQ contains VariantCalling INFO; RHS of CSQ contains VEP data;
+        # HERE, HERE IS WHERE YOU SET INFO1 AND INFO2
+
+        info_split = result['INFO'].str.split('CSQ=')
         result["INFO1"] = info_split.str.get(0)
         result["INFO2"] = info_split.str.get(1).str.split(",")
 
+        # Explode results to unique NM_s
+        exploded_results = result.explode("INFO2")
+        exploded_results["nm_refseq"] = exploded_results["INFO2"].str.split("|").str.get(6).str.split(".").str.get(0)
 
-        #TODO:
-        result3['PRINCIPAL'] = None
+        # Change strategy ... second ....
+        # Merge exploded results with APPRIS and ECCEZIONI
+        exploded_results_appris = pd.merge(exploded_results, APPRIS, how="inner", on=["GENE", "nm_refseq"], suffixes=("_result", "_appris")) # shouldn't expect suffixes (except refseq_appris), since APPRIS doesn't have any in common column names except GENE and nm_refseq
+        exploded_results_eccezioni = pd.merge(exploded_results, ECCEZIONI, how="inner", on=["GENE", "nm_refseq"], suffixes=("_result", "_eccezioni")) # only refseq column name is expected to be in common
 
-        REFSEQPRINCIPAL = APPRIS['refseq'].str.split('.').str.get(0)+'.'
-        REFSEQPRINCIPALECCEZIONI = ECCEZIONI['refseq'].str.split('.').str.get(0)+'.'
-        ECCEZIONI.dropna(subset=['refseq'],inplace=True)
-        REFSEQPRINCIPALECCEZIONI.dropna(inplace=True)
-        for index,row in result3.iterrows():
-            for x in row.INFO2:
-                for refseq in REFSEQPRINCIPALECCEZIONI:
-                    if refseq in x:
-                        #print (str(refseq))
-                        if (ECCEZIONI['GENE'][ECCEZIONI['refseq'].str.split('.').str.get(0)+'.' == refseq]==row['GENE']).item():
-                            result3.loc[index,'PRINCIPAL'] = str(row['INFOFIRST'])+'CSQ='+x
-                        else: pass
-                for refseq in REFSEQPRINCIPAL:
-                    if refseq in x:
-                        if (APPRIS['GENE'][APPRIS['refseq'].str.split('.').str.get(0)+'.' == refseq]==row['GENE']).item():
-                            result3.loc[index,'PRINCIPAL'] = str(row['INFOFIRST'])+'CSQ='+x
-                        else: pass
+        # Now merge those two together, outer join, and you will get single row per variant, with the corresponding refseqs that were found
+        exploded_results_appris_eccezioni = pd.merge(exploded_results_appris, exploded_results_eccezioni, on=["#CHROM", "POS"], how="outer", suffixes=("_appris", "_eccezioni"))
 
-        result3['PRINCIPAL2'] = np.where(result3['PRINCIPAL'].isnull(),
-                        result3['INFO3'],np.nan)
+        # Create the INFO column in the "processed results" - careful, there are no null here since there already is an INFO in exploded_results
+        exploded_results_appris_eccezioni["INFO_processed"] = exploded_results_appris_eccezioni["INFO1_appris"] + "CSQ=" + exploded_results_appris_eccezioni["INFO2_appris"]
+        exploded_results_appris_eccezioni["INFO_processed"].fillna(exploded_results_appris_eccezioni["INFO1_eccezioni"] + "CSQ=" + exploded_results_appris_eccezioni["INFO2_eccezioni"], inplace=True)
 
-        result3['INFO'] = result3['PRINCIPAL']
-        result3['INFO'].fillna(result3['PRINCIPAL2'],inplace=True)
-        result3.drop('PRINCIPAL',axis=1,inplace=True)
-        result3.drop('INFOFIRST',axis=1,inplace=True)
-        result3.drop('INFO2',axis=1,inplace=True)
-        result3.drop('INFO3',axis=1,inplace=True)
-        result3.drop('PRINCIPAL2',axis=1,inplace=True)
+        # When joining with the original results, the info column of the processed will have _processed
+        final_result2 = pd.merge(result, exploded_results_appris_eccezioni, how="left", on=["#CHROM", "POS"], suffixes=("", "_processed"))
+        final_result2["INFO_processed"].fillna(final_result2["INFO"].str.split(",").str.get(0), inplace=True) # what if there is no "|," i.e. only one refseq
+        final_result2["INFO"] = final_result2["INFO_processed"]
+
+        cleaned_result = final_result2[['#CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO', 'FORMAT',
+            sample_name + '_samt', sample_name + '_gatk', 'GENE', 'exone', 'length', 'strand',
+            'refseq', 'hgmd', 'C%', 'G%', 'T%', 'A%', 'ins%', 'del%', 'sum',
+            'INHERITANCE', 'VERBOSE']]
         
 
+        return cleaned_result
 
     def run(self):
-        pass
+        final_annot = self.final_annotation()
+        final_annot.to_csv("annotationpipe_result.csv", sep="\t")
+
         #self.call_vep()
 
         #self.annotate_vcfs()

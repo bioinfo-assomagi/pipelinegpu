@@ -6,6 +6,7 @@ import os
 from Pipes.Pipe import Pipe
 from Pipeline import Pipeline
 from Pipes.VariantFilterPipe import VariantFilterPipe
+from Pipes.AnnotationPipe import AnnotationPipe
 from Entities.Sample import Sample
 
 class VariantFilterWrapperPipe(Pipe):

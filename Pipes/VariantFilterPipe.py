@@ -38,7 +38,7 @@ class VariantFilterPipe(ParallelPipe):
         self.sample.saveJSON()
         
         kwargs.update(
-            {"panel": self.panel})
+            {"sample": self.sample, "panel": self.panel, "genome": self.genome_type})
         
         return kwargs
       
