@@ -65,7 +65,7 @@ class AnnotationPipe(Pipe):
         cds_coverage_eredita = pd.merge(cds_coverage, eredita, on=['GENE'], how='left')
 
         result = cds_coverage_eredita
-        # HERE, HERE IS WHERE YOU SET INFO1 AND INFO2
+        # HERE, HERE IS WHERE YOU SET INFO1 AND INFO2 
 
         info_split = result['INFO'].str.split('CSQ=')
         result["INFO1"] = info_split.str.get(0)
@@ -91,6 +91,9 @@ class AnnotationPipe(Pipe):
         final_result2 = pd.merge(result, exploded_results_appris_eccezioni, how="left", on=["#CHROM", "POS"], suffixes=("", "_processed"))
         final_result2["INFO_processed"].fillna(final_result2["INFO"].str.split(",").str.get(0), inplace=True) # what if there is no "|," i.e. only one refseq
         final_result2["INFO"] = final_result2["INFO_processed"]
+
+        # TODO: add checks for the intron/exons
+        # TODO: add tests, if eccezioni is annotated correctly on variants
 
         cleaned_result = final_result2[['#CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO', 'FORMAT',
             sample_name + '_samt', sample_name + '_gatk', 'GENE', 'exone', 'length', 'strand',
@@ -131,9 +134,9 @@ class AnnotationPipe(Pipe):
 		]
 
         if self.genome_type == "geno38":
-            HGMD = pd.read_csv(config.HGMD38, spe="\t", header=None, names=["#CHROM", "START", "END", "hgmd"], encoding="latin")
+            HGMD = pd.read_csv(config.HGMD38, sep="\t", header=None, names=["#CHROM", "START", "END", "hgmd"], encoding="latin")
         elif self.genome_type == "geno37":
-            HGMD = pd.read_csv(config.HGMD37, spe="\t", header=None, names=["#CHROM", "START", "END", "hgmd"])
+            HGMD = pd.read_csv(config.HGMD37, sep="\t", header=None, names=["#CHROM", "START", "END", "hgmd"])
 
         if len(result) != 0:
             for index,row in result.iterrows():
@@ -487,7 +490,7 @@ class AnnotationPipe(Pipe):
 
         # write it to final/ dir
         final_dir = dir_tree.principal_directory.final.path
-        out_filepath = os.join(final_dir, str(self.sample.name) + "_CDS_annot.csv")
+        out_filepath = os.path.join(final_dir, str(self.sample.name) + "_CDS_annot.csv")
         adapt_annot.to_csv(adapt_annot, out_filepath)
 
 
