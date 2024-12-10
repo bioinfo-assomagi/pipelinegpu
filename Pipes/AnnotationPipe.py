@@ -1,4 +1,4 @@
-from Pipes.Pipe import Pipe
+from Pipes.Pipe import Pipe 
 import os
 import pandas as pd
 import config
@@ -7,8 +7,14 @@ import dir_tree
 import numpy as np
 from Bio.Seq import Seq
 
-""" Pipe that will modify the results of VEP. Responsible for creating _CDS_annot.csv"""
 class AnnotationPipe(Pipe):
+    """
+    A pipeline step that modifies the results of VEP (Variant Effect Predictor).
+    Responsible for creating `_CDS_annot.csv`.
+
+    This class processes VEP annotations, filters them based on RefSeq annotations,
+    and produces final annotated CSV files.
+    """
 
     eredita = None
     hgmd = None
@@ -16,9 +22,24 @@ class AnnotationPipe(Pipe):
     eccezioni = None
 
     def __init__(self):
+        """
+        Initializes the AnnotationPipe.
+        """
         pass
 
     def process(self, **kwargs):
+        """
+        Processes the AnnotationPipe with the given parameters.
+
+        Parameters:
+            principal_directory (str): The main directory where the pipeline operates.
+            sample (Sample): The sample object containing sample-specific data.
+            genome (str): The genome version, e.g., 'geno38' or 'geno37'.
+            panel (str): The panel used, e.g., 'ALLGENE', 'trusightone', 'CANCER', etc.
+
+        Returns:
+            dict: Updated keyword arguments.
+        """
         self.principal_directory = kwargs.pop("principal_directory", None)
         #self.samples = kwargs.pop("samples", None)
         self.sample = kwargs.pop("sample")
@@ -43,6 +64,15 @@ class AnnotationPipe(Pipe):
         return kwargs
 
     def filter_vep_refseq(self):
+        """
+        Filters the VEP output based on RefSeq annotations.
+
+        This method filters the VEP annotations to keep only those matching specific RefSeq transcripts,
+        using APPRIS and ECCEZIONI data.
+
+        Returns:
+            DataFrame: The filtered and cleaned result DataFrame.
+        """
         APPRIS = pd.read_csv(config.APPRIS, sep="\t")
         ECCEZIONI = pd.read_csv(config.ECCEZIONI, sep="\t")
 
@@ -51,7 +81,7 @@ class AnnotationPipe(Pipe):
 
         folder_COV = dir_tree.principal_directory.coverage.path
         sample_name = str(self.sample.name)
-        coverage = pd.read_csv(os.path.join(folder_COV, sample_name, sample_name + "_all"), sep='\t', header=0)
+        coverage = pd.read_csv(os.path.join(folder_COV, sample_name, sample_name + "_all"), sep='\t', header=0) # TODO; read it from self.sample.coverage_all
         if self.genome_type == "geno38":
             eredita = pd.read_csv(config.EREDITA38, sep="\t", header=0)
         elif self.genome_type == "geno37":
@@ -103,7 +133,18 @@ class AnnotationPipe(Pipe):
 
         return cleaned_result
 
-    def adapt_annotation(self, result):
+    def process_vep_info(self, result):
+        """
+        Processes the INFO field from the VEP output.
+
+        Extracts relevant annotations from the INFO column and adds them as separate columns in the DataFrame.
+
+        Parameters:
+            result (DataFrame): The DataFrame resulting from `filter_vep_refseq()`.
+
+        Returns:
+            DataFrame: The DataFrame with processed VEP annotations.
+        """
         name = str(self.sample.name)
         gatk = name + "_gatk"
         samtools = name + "_samt"
@@ -138,6 +179,7 @@ class AnnotationPipe(Pipe):
         elif self.genome_type == "geno37":
             HGMD = pd.read_csv(config.HGMD37, sep="\t", header=None, names=["#CHROM", "START", "END", "hgmd"])
 
+        """ 1. Count the unbalance, i.e. the percentange of the alternate allele across the aligned reads. """
         if len(result) != 0:
             for index,row in result.iterrows():
                 try:
@@ -171,6 +213,8 @@ class AnnotationPipe(Pipe):
                 except KeyError:
                     print ('TROVA VARIANTE TERMINATO!!!')
     ######################################################################################################
+
+            """ 2. Get the informations from the fields of the INFO column. (TODO: could be encapsulated and rewritten more robustly. )"""
             result['samtools'] = result[samtools].str.split(':').str.get(0)
             result['gatk'] = result[gatk].str.split(':').str.get(0)
 
@@ -178,9 +222,7 @@ class AnnotationPipe(Pipe):
             # 			result['INFO'].str.split(';').str.get(3).str.split('=').str.get(1),
             # 			result['INFO'].str.split(';').str.get(0).str.split('=').str.get(1))
             result['DEPTH'] = result['INFO'].str.split('DP=').str.get(1).str.split(';').str.get(0)
-
             result['mapquality'] = result['INFO'].str.split('CSQ=').str.get(0).str.split('MQ=').str.get(1).str.split(';').str.get(0)
-
             result['consequence'] = result['INFO'].str.split('|').str.get(1)
             result['impact'] = result['INFO'].str.split('|').str.get(2)
             result['symbol'] = result['INFO'].str.split('|').str.get(3)
@@ -484,18 +526,77 @@ class AnnotationPipe(Pipe):
 
         return result3
 
+    
+    def filter_disease(self, adapt_annot):
+        """
+        Filters the annotations based on disease-specific criteria.
+
+        This method filters the annotations based on depth and quality thresholds, and matches genes with the disease phenotype.
+
+        Parameters:
+            adapt_annot (DataFrame): The DataFrame resulting from `process_vep_info()`.
+
+        Returns:
+            DataFrame: The filtered DataFrame containing disease-specific annotations.
+        """
+        phenotype = pd.read_csv(os.path.join(dir_tree.principal_directory.pheno.path, "phenotype"), sep="\t", header=0)
+        
+        if self.panel == "ALLGENE" or self.panel == "trusightone" or self.panel == "CANCER":
+            CDS = adapt_annot[adapt_annot["DEPTH"] >= 10]
+            CDS = CDS[CDS["QUAL"] >= 18]
+        else:
+            CDS = adapt_annot[adapt_annot["DEPTH"] >= 10]
+        
+        sample_name = str(self.sample.name)
+        missing = os.path.join(dir_tree.principal_directory.pheno.path, "MISSING_" + sample_name)
+        try:
+            missing_df = pd.read_csv(missing, sep="\t", header=0)
+        except:
+            missing_df = None
+            print ("File MISSING does not exist for {}!".format(sample_name))
+
+        sample_phenotype = phenotype[phenotype['sample'].astype(str) == sample_name][['malattia', 'gene']].drop_duplicates()
+        #a = phenotype_[['malattia', 'gene']].drop_duplicates()
+        
+        x1 = pd.DataFrame(sample_phenotype['gene'])
+        if missing_df is not None:
+            for gene in sample_phenotype['gene']:
+                for index, missing_gene in missing_df.iterrows():
+                    if str(gene) == str(missing_gene.MISSING):
+                        x2 = pd.DataFrame({'gene': pd.Series([str(missing_gene.HGNC_SYMBOL)])})
+                        x1 = x1.append(x2)
+
+        b = CDS
+        b['strand'].fillna(1, inplace=True)
+        b['strand'] = b['strand'].astype(int)
+        b.sort_values(by=['GENE'], inplace=True)
+
+        b['sample'] = sample_name
+
+        print('Len disease annot: ', len(b), '->', sample_name)
+
+        return b
+
+
     def run(self):
+        """
+        Executes the pipeline steps.
+
+        This method runs the pipeline by calling the `filter_vep_refseq`, `process_vep_info`,
+        and `filter_disease` methods in sequence, and saves the resulting files.
+        """
         refseq_filter = self.filter_vep_refseq()
-        adapt_annot = self.adapt_annotation(refseq_filter)
+        adapt_annot = self.process_vep_info(refseq_filter)
 
         # write it to final/ dir
         final_dir = dir_tree.principal_directory.final.path
         out_filepath = os.path.join(final_dir, str(self.sample.name) + "_CDS_annot.csv")
-        adapt_annot.to_csv(adapt_annot, out_filepath)
+        adapt_annot.to_csv(out_filepath, sep="\t", index=False, encoding='utf-8')
+        self.sample.CDS_annot = out_filepath
 
-
-
-    
-
-
+        depth_filtered = self.filter_disease(adapt_annot)
+        print("Wiritng {}_pheno_annot.csv".format(self.sample.name))
+        depth_filtered_out = os.path.join(dir_tree.principal_directory.final.path, str(self.sample.name) + "_pheno_annot.csv")
+        depth_filtered.to_csv(depth_filtered_out, sep="\t", index=False, encoding='utf-8')
+        self.pheno_annot = depth_filtered_out
 

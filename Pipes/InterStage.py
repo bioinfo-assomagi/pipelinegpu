@@ -12,7 +12,7 @@ from Entities.Sample import Sample
 
 from DBContext import DBContext
 
-""" Pipe that sits in between two Pipelines. Processes the results of Pipeline1. """
+""" Get sample data from the DB. """
 class SampleListFam(Pipe):
 
     def __init__(self) -> None:

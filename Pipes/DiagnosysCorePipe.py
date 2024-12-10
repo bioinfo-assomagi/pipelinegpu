@@ -31,10 +31,52 @@ from Pipes.CoveragePipeTest import CoveragePipeTest
 """ Creates the principal directory of the sequencing project. """ #TODO: will be removed, replaced in InputPipe (Setup)
 class PrincipalFolderPipe(Pipe):
 
+    """
+    The `PrincipalFolderPipe` class is responsible for setting up the principal directory for the project.
+    It checks if the directory exists and handles overwriting based on the provided parameters.
+
+    **Methods:**
+
+    - `process(**kwargs)`: Processes the setup of the principal directory.
+    - `create_paths(principal_directory)`: Builds the project tree inside the principal directory.
+
+    **Example Usage:**
+
+    .. code-block:: python
+
+        pipe = PrincipalFolderPipe()
+        kwargs = {
+            'over': True,
+            'name_folder': '/path/to/project_directory',
+            'dest': 'destination_identifier'
+        }
+        result = pipe.process(**kwargs)
+    """
+
     def __init__(self) -> None:
         super().__init__()
 
     def process(self, **kwargs):
+        """
+        Processes the setup of the principal directory.
+
+        :param kwargs: Keyword arguments containing:
+            - `over` (bool, optional): If `True`, overwrites existing data.
+            - `name_folder` (str): The name/path of the principal directory.
+            - `dest` (str, optional): Destination identifier.
+
+        :return: Updated keyword arguments with the principal directory information.
+        :rtype: dict
+
+        :raises SystemExit: If the directory exists and `over` is `False`.
+
+        **Example:**
+
+        .. code-block:: python
+
+            result = pipe.process(over=True, name_folder='/path/to/project', dest='dest_id')
+        """
+
         print("Inside PrincipalFolderPipe ... ")
     
         over = kwargs.pop("over", None)  # if True, overwrites old data
@@ -59,6 +101,21 @@ class PrincipalFolderPipe(Pipe):
 
     """ Builds the project tree inside the principal directory. TODO: write this to config: DONE, check dir_tree.py """
     def create_paths(self, principal_directory):
+        """
+        Builds the project tree inside the principal directory.
+
+        :param principal_directory: The path to the principal directory.
+        :type principal_directory: str
+
+        **Note:** This method is optional and may be called to create specific subdirectories within the principal directory.
+
+        **Example:**
+
+        .. code-block:: python
+
+            pipe.create_paths('/path/to/principal_directory')
+        """
+
         print('Building tree folder...')
         os.makedirs(principal_directory)
         directories = ["fastq", 
@@ -98,10 +155,44 @@ class PrincipalFolderPipe(Pipe):
 
 class ResyncDBPipe(Pipe):
 
+    """
+    The `ResyncDBPipe` class handles the synchronization of the database from a remote server
+    to the local path based on the provided destination server ID.
+
+    **Methods:**
+
+    - `process(**kwargs)`: Performs the database resynchronization.
+
+    **Example Usage:**
+
+    .. code-block:: python
+
+        pipe = ResyncDBPipe()
+        kwargs = {
+            'dest': 'server_identifier'
+        }
+        result = pipe.process(**kwargs)
+    """
+
     def __init__(self) -> None:
         super().__init__()
     
     def process(self, **kwargs):
+        """
+        Resynchronizes the database based on the destination server ID.
+
+        :param kwargs: Keyword arguments containing:
+            - `dest` (str): The destination server identifier.
+
+        :return: Updated keyword arguments with the local database path.
+        :rtype: dict
+
+        **Example:**
+
+        .. code-block:: python
+
+            result = pipe.process(dest='server_id')
+        """
         
         server_id = kwargs.pop("dest", None)
 
@@ -113,13 +204,49 @@ class ResyncDBPipe(Pipe):
         kwargs.update({"dest": server_id, "db_path": local_db_path})
         return kwargs
 
+
 """ Transfer the FastQ files from the external server to the project directory. TODO: (Let's leave it to other pipes) Additionally, organizes files into samples, and creates the sample jsons. """
 class ReadFastQFilesPipe(Pipe):
+    """
+    The `ReadFastQFilesPipe` class transfers FastQ files from an external server to the project directory.
+
+    **Methods:**
+
+    - `process(**kwargs)`: Initiates the transfer and organization of FastQ files.
+    - `copy_fastq_files(fastq_source, server_id, destination)`: Copies FastQ files from the source to the destination.
+
+    **Example Usage:**
+
+    .. code-block:: python
+
+        pipe = ReadFastQFilesPipe()
+        kwargs = {
+            'fastq': '/path/to/fastq_source',
+            'dest': 'server_identifier'
+        }
+        result = pipe.process(**kwargs)
+    """
 
     def __init__(self) -> None:
         super().__init__()
 
     def process(self, **kwargs):
+        """
+        Initiates the transfer and organization of FastQ files.
+
+        :param kwargs: Keyword arguments containing:
+            - `fastq` (str, optional): The source path of FastQ files.
+            - `dest` (str): The destination server identifier.
+
+        :return: Updated keyword arguments with FastQ file paths.
+        :rtype: dict
+
+        **Example:**
+
+        .. code-block:: python
+
+            result = pipe.process(fastq='/path/to/fastq', dest='server_id')
+        """
 
         #principal_directory = kwargs.pop('principal_directory')
         principal_directory = dir_tree.principal_directory.path
@@ -135,13 +262,28 @@ class ReadFastQFilesPipe(Pipe):
         kwargs.update({"principal_directory": principal_directory, "fastq": fastq, "dest": dest, "fastq_files": fastq_files})
         return kwargs
 
-        
-
-        
-
-
     def copy_fastq_files(self, fastq_source, server_id, destination):
-        
+        """
+        TODO: Move to utils.
+        Copies FastQ files from the source to the destination directory.
+
+        :param fastq_source: The source directory containing FastQ files.
+        :type fastq_source: str
+        :param server_id: The destination server identifier.
+        :type server_id: str
+        :param destination: The destination directory where files will be copied.
+        :type destination: str
+
+        :return: A list of copied FastQ file paths.
+        :rtype: list
+
+        **Example:**
+
+        .. code-block:: python
+
+            fastq_files = pipe.copy_fastq_files('/path/to/source', 'server_id', '/path/to/destination')
+        """
+
         print('Copying fastq files ... ')
         fastq_folder = join(destination, 'fastq/')
 
@@ -295,6 +437,22 @@ class ProcessFastQFilesPipe2(Pipe):
 
 
 class SetSamplesPipe(ParallelPipe):
+    """
+    The `SetSamplesPipe` saves the information of a sample and the respective fastq files of that sample into a sample_list.csv file.
+    The name of the file would be sample_list_<thread_identifier>, as the Pipe will be part of a `Pipeline` that will be executed in parallel.
+    It is supposed to work on one sample at a time.
+    At the same time, this is the place where the sample_data directory starts to be populatet by samples. As the information from each sample
+    will be saved into a sample_id.json file inside the sample_data directory. It will be updated continuously by downstream steps of the `Pipeline`.
+    
+
+    **Methods:**
+
+    - `process(**kwargs)`: Processes the resynchronization and file preparation.
+    - `set_samples(principal_directory, fastq_files)`: Saves the sample info (sample_id, fastq_forward, fastq_reverse) into a csv. 
+    - `store_sample_data(sample_dict)`: Creates the `Sample` object (which by now should contain the fastq files information) and its respective .json file and stores it inside sample data.
+
+    """
+
 
     def __init__(self) -> None:
         super().__init__()
@@ -357,14 +515,58 @@ class SetSamplesPipe(ParallelPipe):
             s.saveJSON()
 
 
-""" Pipes that runs the resync of fastq files, it takes as input the fastq files present in the sample_list.csv. 
-Additionally, manipulates filenames and file organization to remove temp files, as well as to prepare it for Parabricks. """
+
 class PreAlignmentPipe(Pipe):
+    """
+    The `PreAlignmentPipe` class runs the resynchronization of FastQ files. It takes as input the FastQ files
+    present in the sample list and performs the following operations:
+
+    - Resynchronizes paired-end FastQ files.
+    - Manipulates filenames and file organization to remove temporary files.
+    - Prepares files for processing with Parabricks.
+
+    **Methods:**
+
+    - `process(**kwargs)`: Processes the resynchronization and file preparation.
+    - `prealignment(principal_directory, genome, sample)`: Performs the resynchronization for a single sample.
+
+    **Example Usage:**
+
+    .. code-block:: python
+
+        pipe = PreAlignmentPipe()
+        kwargs = {
+            'genome': 'geno38',
+            'samples_dataframe': df_samples,
+            'thread_id': 1,
+            'queue': sample_queue
+        }
+        result = pipe.process(**kwargs)
+    """
 
     def __init__(self) -> None:
         super().__init__()
 
     def process(self, **kwargs):
+        """
+        Processes the resynchronization and preparation of FastQ files for all samples in the dataframe.
+
+        :param kwargs: Keyword arguments containing:
+            - `genome` (str): The genome version (e.g., 'geno38' or 'geno37').
+            - `samples_dataframe` (pd.DataFrame): DataFrame containing sample information.
+            - `thread_id` (int, optional): Thread identifier for logging.
+            - `queue` (multiprocessing.Queue, optional): Queue to pass data between processes.
+
+        :return: Updated keyword arguments with additional information.
+        :rtype: dict
+
+        **Example:**
+
+        .. code-block:: python
+
+            result = pipe.process(genome='geno38', samples_dataframe=df_samples, thread_id=1)
+        """
+
         genome = kwargs.pop('genome')
         df_samples = kwargs.pop('samples_dataframe')
         principal_directory = dir_tree.principal_directory.path
@@ -391,6 +593,28 @@ class PreAlignmentPipe(Pipe):
         return kwargs
 
     def prealignment(self, principal_directory, genome, sample):
+        """
+        Performs resynchronization and preparation for a single sample.
+
+        :param principal_directory: The root directory of the project.
+        :type principal_directory: str
+        :param genome: The genome version ('geno38' or 'geno37').
+        :type genome: str
+        :param sample: A sample record from the samples DataFrame.
+        :type sample: pd.Series
+
+        :return: A dictionary containing the sample name and paths to the resynchronized FastQ files.
+        :rtype: dict
+
+        :raises SystemExit: If resynchronization fails.
+
+        **Example:**
+
+        .. code-block:: python
+
+            resynced_sample = pipe.prealignment('/path/to/project', 'geno38', sample_record)
+        """
+                
         name = str(sample['name'])
         forward = sample['forward']
         reverse = sample['reverse']
@@ -457,6 +681,17 @@ class PreAlignmentPipe(Pipe):
 
 """This is a Pipe that "wraps" a Pipeline object that will be executed in parallel. The ProcessPipe will launch a pool of threads that will execute the pipelines in parallel. """
 class ProcessPipe(Pipe):
+    """
+    The `ReadFastQFilesPipe` class "wraps" a Pipeline object that will be executed in parallel. 
+    The ProcessPipe will launch a pool of threads that will execute the pipelines in parallel. 
+
+    **Methods:**
+
+    - `process(**kwargs)`: Initiates parallel run of the Pipeline wrapped by this Pipe.
+    - `worker(kwargs)`: Speicifes the Pipeline structure (TODO: future versions will take the Pipeline at __init__)
+    - `prepare_args(**kwargs)`: Adds the Sample object to the kwargs, and prepares the arguments so that they are fed to the worker.
+
+    """
     
     def process(self, **kwargs):
 

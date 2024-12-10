@@ -20,7 +20,7 @@ from Entities.Sample import Sample
 
 # TODO: if files not found inside samples list, try reading them from principal_directory
 class VariantCallPipe():
-    """ Class responsible for running varinat calling (pb_gatk and pb_deepvariant). 
+    """ Class responsible for running variant calling (pb_gatk and pb_deepvariant). 
     TODO: create a wrapper for this class. I.e. the wrapper should be responsible for handling the samples (receiving them from the
     directories, and supplying them to the this class). The VariantCallPipe should act on one sample at time, so that the convetion
     of each Pipe being responsible for one sample at a time is satisfied."""
