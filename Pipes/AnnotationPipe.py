@@ -43,7 +43,7 @@ class AnnotationPipe(Pipe):
         self.principal_directory = kwargs.pop("principal_directory", None)
         #self.samples = kwargs.pop("samples", None)
         self.sample = kwargs.pop("sample")
-        self.genome_type = kwargs.pop("genome", None)
+        self.genome_type = kwargs.pop("genome", "geno38")
         self.panel = kwargs.pop("panel", None)
 
         self.input_vcf = os.path.join(self.principal_directory, "vcf/")
@@ -60,7 +60,7 @@ class AnnotationPipe(Pipe):
 
         self.sample.saveJSON()
 
-        kwargs.update({"principal_directory": self.principal_directory, "sample": self.sample, "genome_type": self.genome_type, "panel": self.panel})
+        kwargs.update({"principal_directory": self.principal_directory, "sample": self.sample, "genome": self.genome_type, "panel": self.panel})
         return kwargs
 
     def filter_vep_refseq(self):

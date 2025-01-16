@@ -42,6 +42,7 @@ from Pipes.Fq2BamPipe import Fq2BamPipe
 from Pipes.InterStage import SampleListFam
 from Pipes.VariantCallPipe import VariantCallPipe
 from Pipes.VariantFilterWrapperPipe import VariantFilterWrapperPipe
+from Pipes.IndelWrapperPipe import IndelWrapperPipe
 
 
 class PipelineAssembler():
@@ -91,9 +92,11 @@ class PipelineAssembler():
         elif pipeline_type == "test":
             return Pipeline(Setup()).assemblePipe(ResyncDBPipe()).assemblePipe(ReadFastQFilesPipe()).assemblePipe(ProcessPipe()).assemblePipe(SampleListFam()).assemblePipe(Fq2BamPipe()).assemblePipe(CoverageWrapperPipe()).assemblePipe(VariantCallPipe()).assemblePipe(VariantFilterWrapperPipe()).assemblePipe(EndPipe())
         elif pipeline_type == "vcf_first":
+            # NOTE: right now all of the following are here due to testing
             #return Pipeline(Setup()).assemblePipe(ResyncDBPipe()).assemblePipe(ReadFastQFilesPipe()).assemblePipe(ProcessPipe()).assemblePipe(SampleListFam()).assemblePipe(Fq2BamPipe()).assemblePipe(VariantCallPipe()).assemblePipe(CoverageWrapperPipe()).assemblePipe(VariantFilterWrapperPipe()).assemblePipe(EndPipe())
             #return Pipeline(Setup()).assemblePipe(VariantFilterWrapperPipe()).assemblePipe(EndPipe())
-            return Pipeline(Setup()).assemblePipe(ParallelWrapper(Pipeline(VariantFilterPipe()).assemblePipe(AnnotationPipe()))).assemblePipe(EndPipe())
+            #return Pipeline(Setup()).assemblePipe(ParallelWrapper(Pipeline(VariantFilterPipe()).assemblePipe(AnnotationPipe()))).assemblePipe(EndPipe())
+            return Pipeline(Setup()).assemblePipe(IndelWrapperPipe()).assemblePipe(EndPipe())
         
         elif pipeline_type == "bamstart":
             return Pipeline(Setup()).assemblePipe(ResyncDBPipe()).assemblePipe(CoverageWrapperPipe()).assemblePipe(VariantCallPipe()).assemblePipe(VariantFilterWrapperPipe()).assemblePipe(EndPipe())
