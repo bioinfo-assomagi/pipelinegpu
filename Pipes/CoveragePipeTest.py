@@ -40,6 +40,8 @@ class CoveragePipeTest(Pipe):
         self.summary_macroarea()
         self.clean_temp_dir()
 
+        #TODO: save results paths to sample.json
+
         kwargs.update({"panel": self.panel, "sample": self.sample, "dest": dest}) # only if donwstream pipes of the same thread will be present
         return kwargs
 

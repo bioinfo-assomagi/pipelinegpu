@@ -487,12 +487,13 @@ class VariantCallPipeIndel(ParallelPipe):
         folder_COV = dir_tree.principal_directory.coverage.path
         sample_name = str(self.sample.name)
         coverage = pd.read_csv(os.path.join(folder_COV, sample_name, sample_name + "_all"), sep='\t', header=0) # TODO; read it from self.sample.coverage_all
-        _stat_cov = join(folder_COV, sample_name, sample_name + '_stat_cov.csv')
-        stat_cov = pd.read_csv(_stat_cov, sep='\t')
+        #_stat_cov = join(folder_COV, sample_name, sample_name + '_stat_cov.csv')
+        #stat_cov = pd.read_csv(_stat_cov, sep='\t')
 
         sample_x = str(self.sample.name)
 
-        if stat_cov[stat_cov['cutoff']=='depth_macro>=25'].iloc[0,3] >= 92:
+        #if stat_cov[stat_cov['cutoff']=='depth_macro>=25'].iloc[0,3] >= 92:
+        if True:
 
             # Not an issue for parallelization, since each sample corresponds to one (his own) directory
             if not os.path.exists(join(folder_indel, sample_x)):
@@ -512,7 +513,7 @@ class VariantCallPipeIndel(ParallelPipe):
             phenotype['sample'] = phenotype['sample'].astype('str')
             phenotype['sample'].replace(r'\.202$','.2020',inplace=True,regex=True)
             phenotype['sample'] = phenotype['sample'].astype('str')
-            print (CONTROL_folder, bam_path)
+            self.thread_print(CONTROL_folder + ":" + bam_path)
 
             if not os.path.exists(join(folder_bam, 'inanalysis', sample_x)):
                 os.makedirs(join(folder_bam, 'inanalysis', sample_x))
@@ -520,9 +521,9 @@ class VariantCallPipeIndel(ParallelPipe):
             try:
                 shutil.move(bam_path, join(folder_bam,'inanalysis', sample_x))
                 shutil.move(bai_path, join(folder_bam,'inanalysis', sample_x))
-            except: print ('errore moving bam files to inanalysis')
+            except: self.thread_print ('errore moving bam files to inanalysis')
 
-            print ('JUST REAL!!!\n')
+            self.thread_print('JUST REAL!!!\n')
             ##################################################################
             self.ConvadingCore(None, sample_x,PCA_folder,folder_bam,folder_indel,bedfile)
             # # # ##################################################################
@@ -538,7 +539,7 @@ class VariantCallPipeIndel(ParallelPipe):
                 PCA_folder = join(_STAMPO_,'PCA')
                 PCA_NEW = join(_STAMPO_,'NEWENTRY')
                 self.ClusterJustControl(None, sample_x, PCA_folder, _CONTROL_folder_, PCA_NEW, _bedfile_, folder_bam)
-                print ('JUST CONTROL OCULARE2!!!\n')
+                self.thread_print('JUST CONTROL OCULARE2!!!\n')
             if ('CANCER' in project): #|('OCULARE' in project)):
                 ##1################################################################
                 _STAMPO_ = '/home/magi/PROJECT/diagnosys/bin/COVSTAMP/convading/CANCER/'
@@ -547,7 +548,7 @@ class VariantCallPipeIndel(ParallelPipe):
                 PCA_folder = join(_STAMPO_,'PCA')
                 PCA_NEW = join(_STAMPO_,'NEWENTRY')
                 self.ClusterJustControl(None, sample_x, PCA_folder, _CONTROL_folder_, PCA_NEW, _bedfile_, folder_bam)
-                print ('JUST CONTROL CANCER!!!\n')
+                self.thread_print('JUST CONTROL CANCER!!!\n')
                 #2################################################################
                 # _STAMPO_ = '/home/magi/PROJECT/diagnosys/bin/COVSTAMP/convading/OCULARE/'
                 # _bedfile_ = '/home/magi/PROJECT/diagnosys/bin/COVSTAMP/convading/OCULARE/BED/bed_OCULARE_TWIST91957849.bed'
@@ -559,7 +560,7 @@ class VariantCallPipeIndel(ParallelPipe):
 
             if ('INTEGRACARDIOSTANCHEZZA' in project):
                 #1################################################################
-                print ('JUST CONTROL INTEGRACARDIOSTANCHEZZA!!!\n')
+                self.thread_print('JUST CONTROL INTEGRACARDIOSTANCHEZZA!!!\n')
                 _STAMPO_ = '/home/magi/PROJECT/diagnosys/bin/COVSTAMP/convading/INTEGRACARDIOSTANCHEZZA/'
                 _bedfile_ = '/home/magi/PROJECT/diagnosys/bin/COVSTAMP/convading/INTEGRACARDIOSTANCHEZZA/BED/bed_INTEGRACARDIOSTANCHEZZA.bed'
                 _CONTROL_folder_ = join(_STAMPO_,'CONTROLS')
@@ -568,7 +569,7 @@ class VariantCallPipeIndel(ParallelPipe):
                 self.ClusterJustControl(None, sample_x, PCA_folder, CONTROL_folder, PCA_NEW, _bedfile_, folder_bam)
             elif ('GENEOB' in project):
                 #1################################################################
-                print ('JUST CONTROL GENEOB!!!\n')
+                self.thread_print('JUST CONTROL GENEOB!!!\n')
                 _STAMPO_ = '/home/magi/PROJECT/diagnosys/bin/COVSTAMP/convading/GENEOB/'
                 _bedfile_ = '/home/magi/PROJECT/diagnosys/bin/COVSTAMP/convading/GENEOB/BED/bed_GENEOB.bed'
                 _CONTROL_folder_ = join(_STAMPO_,'CONTROLS')
@@ -583,7 +584,7 @@ class VariantCallPipeIndel(ParallelPipe):
                 PCA_folder = join(_STAMPO_,'PCA')
                 PCA_NEW = join(_STAMPO_,'NEWENTRY')
                 self.ClusterJustControl(None, sample_x, PCA_folder, CONTROL_folder, PCA_NEW, _bedfile_, folder_bam)
-                print ('JUST CONTROL MIXED1!!!\n')
+                self.thread_print('JUST CONTROL MIXED1!!!\n')
                 #2################################################################
                 _STAMPO_ = '/home/magi/PROJECT/diagnosys/bin/COVSTAMP/convading/INFERTILITY/'
                 _bedfile_ = '/home/magi/PROJECT/diagnosys/bin/COVSTAMP/convading/INFERTILITY/BED/bed_INFERTILITY.bed'
@@ -591,7 +592,7 @@ class VariantCallPipeIndel(ParallelPipe):
                 PCA_folder = join(_STAMPO_,'PCA')
                 PCA_NEW = join(_STAMPO_,'NEWENTRY')
                 self.ClusterJustControl(None, sample_x, PCA_folder, _CONTROL_folder_, PCA_NEW, _bedfile_, folder_bam)
-                print ('JUST CONTROL INFERTILITY!!!\n')
+                self.thread_print('JUST CONTROL INFERTILITY!!!\n')
             elif (('LYMPHOBESITY' in project)|('NEUROLOGY' in project)|('VASCULAR' in project)):
                 #1################################################################
                 _STAMPO_ = '/home/magi/PROJECT/diagnosys/bin/COVSTAMP/convading/LYMPHOBESITY/'
@@ -600,7 +601,7 @@ class VariantCallPipeIndel(ParallelPipe):
                 PCA_folder = join(_STAMPO_,'PCA')
                 PCA_NEW = join(_STAMPO_,'NEWENTRY')
                 self.ClusterJustControl(None, sample_x, PCA_folder, _CONTROL_folder_, PCA_NEW, _bedfile_, folder_bam)
-                print ('JUST CONTROL LYMPHOBESITY!!!\n')
+                self.thread_print('JUST CONTROL LYMPHOBESITY!!!\n')
                 #2###################################################################
                 _STAMPO_ = '/home/magi/PROJECT/diagnosys/bin/COVSTAMP/convading/NEUROLOGY/'
                 _bedfile_ = '/home/magi/PROJECT/diagnosys/bin/COVSTAMP/convading/NEUROLOGY/BED/bed_NEUROLOGY.bed'
@@ -608,7 +609,7 @@ class VariantCallPipeIndel(ParallelPipe):
                 PCA_folder = join(_STAMPO_,'PCA')
                 PCA_NEW = join(_STAMPO_,'NEWENTRY')
                 self.ClusterJustControl(None, sample_x, PCA_folder, _CONTROL_folder_, PCA_NEW, _bedfile_, folder_bam)
-                print ('JUST CONTROL NEUROLOGY!!!\n')
+                self.thread_print('JUST CONTROL NEUROLOGY!!!\n')
                 #3###################################################################
                 _STAMPO_ = '/home/magi/PROJECT/diagnosys/bin/COVSTAMP/convading/VASCULAR/'
                 _bedfile_ = '/home/magi/PROJECT/diagnosys/bin/COVSTAMP/convading/VASCULAR/BED/bed_VASCULAR.bed'
@@ -616,14 +617,14 @@ class VariantCallPipeIndel(ParallelPipe):
                 PCA_folder = join(_STAMPO_,'PCA')
                 PCA_NEW = join(_STAMPO_,'NEWENTRY')
                 self.ClusterJustControl(None, sample_x, PCA_folder, _CONTROL_folder_, PCA_NEW, _bedfile_, folder_bam)
-                print ('JUST CONTROL VASCULAR!!!\n')
+                self.thread_print('JUST CONTROL VASCULAR!!!\n')
             try:
                 #print (' '.join(['rm',(CONTROL_folder+'/*.txt')]))
                 #system(' '.join(['rm',(CONTROL_folder+'/*.txt')])) TODO: move this to end pipe
                 shutil.move(join(folder_bam,'inanalysis',sample_x, BAM), folder_bam)
                 shutil.move(join(folder_bam,'inanalysis',sample_x, BAI), folder_bam)
-            except Exception as e: print (e)
-            print ('---------------------------------------------')
+            except Exception as e: self.thread_print(e)
+            self.thread_print('---------------------------------------------')
 
         else:
             # pass
@@ -659,6 +660,8 @@ class VariantCallPipeIndel(ParallelPipe):
             #system(' '.join(['scp',join(folder_indel,sample_x,sample_x+'_final_indel.csv'), "bioinfo@192.168.1.133:/home/magi/VIRTUAL38/apimagi_prod/NGS_RESULT/INDEL/"]))
             #system(' '.join(['cp',join(folder_indel,sample_x,sample_x+'_final_indel.csv'), "/home/magi/VIRTUAL38/apimagi_prod/NGS_RESULT/INDEL/"]))
 
+            self.sample.prefinal_indel = join(folder_indel,sample_x,sample_x+'_prefinal_indel.csv')
+            self.sample.saveJSON()
 
             info_all_sample = join(folder_indel,'INDELs_info.csv')
             info_all_sample_download = join(path_download,'INDELs_%s') % (str(lastFOLDER))
