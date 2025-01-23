@@ -199,7 +199,7 @@ class ResyncDBPipe(Pipe):
         print("Resyncing DB ...")
         db_server = utils.get_db_server(server_id)
         local_db_path = utils.get_db_path(server_id)
-        #os.system("rsync -avz -e ssh {} {}".format(db_server, config.DB_PATH))
+        os.system("rsync -avz -e ssh {} {}".format(db_server, config.DB_PATH))
 
         kwargs.update({"dest": server_id, "db_path": local_db_path})
         return kwargs

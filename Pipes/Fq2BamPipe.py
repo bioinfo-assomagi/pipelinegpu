@@ -78,10 +78,10 @@ class Fq2BamPipe(Pipe):
                             '--out-bam', "{}/{}_final.bam".format(config.DOCKER_OUTPUTDIR, sample_name)]))
             
             
-            
-        #     bai_path = "{}/{}_final.bam.bai".format(os.path.join(principal_directory, "bam"), sample_name)
-        #     new_bai_path = "{}/{}_final.bai".format(os.path.join(principal_directory, "bam"), sample_name)
-        #     os.rename(bai_path, new_bai_path)
+            #TODO: consider returning this
+            # bai_path = "{}/{}_final.bam.bai".format(os.path.join(principal_directory, "bam"), sample_name)
+            # new_bai_path = "{}/{}_final.bai".format(os.path.join(principal_directory, "bam"), sample_name)
+            # os.rename(bai_path, new_bai_path)
 
         #     sample['bam'] = "{}/{}_final.bam".format(os.path.join(principal_directory, "bam"), sample_name)
         #     sample['bai'] = new_bai_path
@@ -89,7 +89,7 @@ class Fq2BamPipe(Pipe):
         #     #os.system(' '.join(['rm', "{}/{}_final_chrs.txt".format(os.path.join(principal_directory, "bam"), sample_name)]))
 
             sample.bam = "{}/{}_final.bam".format(os.path.join(principal_directory, "bam"), sample_name)
-            sample.bai = "{}/{}_final.bai".format(os.path.join(principal_directory, "bam"), sample_name)
+            sample.bai = "{}/{}_final.bam.bai".format(os.path.join(principal_directory, "bam"), sample_name)
             sample.saveJSON()
 
         # kwargs.update({"principal_directory": principal_directory, "samples": resynced_samples_list})

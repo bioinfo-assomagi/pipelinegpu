@@ -65,7 +65,7 @@ class VariantCallPipeIndel(ParallelPipe):
         self.sample = kwargs.pop("sample")
         self.panel = kwargs.pop("panel", None)
         self.genome_type = kwargs.pop("genome", "geno38")
-        self.dest = kwargs["dest"]
+        self.dest = kwargs.pop("dest")
 
         self.thread_print("TESTING VARIANT Calling INDEL PIPE: {}".format(self.sample.name))
 
@@ -487,13 +487,13 @@ class VariantCallPipeIndel(ParallelPipe):
         folder_COV = dir_tree.principal_directory.coverage.path
         sample_name = str(self.sample.name)
         coverage = pd.read_csv(os.path.join(folder_COV, sample_name, sample_name + "_all"), sep='\t', header=0) # TODO; read it from self.sample.coverage_all
-        #_stat_cov = join(folder_COV, sample_name, sample_name + '_stat_cov.csv')
-        #stat_cov = pd.read_csv(_stat_cov, sep='\t')
+        _stat_cov = join(folder_COV, sample_name, sample_name + '_stat_cov.csv')
+        stat_cov = pd.read_csv(_stat_cov, sep='\t')
 
         sample_x = str(self.sample.name)
 
-        #if stat_cov[stat_cov['cutoff']=='depth_macro>=25'].iloc[0,3] >= 92:
-        if True:
+        if stat_cov[stat_cov['cutoff']=='depth_macro>=25'].iloc[0,3] >= 92:
+        #if True:
 
             # Not an issue for parallelization, since each sample corresponds to one (his own) directory
             if not os.path.exists(join(folder_indel, sample_x)):
@@ -505,7 +505,7 @@ class VariantCallPipeIndel(ParallelPipe):
             bai_path = self.sample.bai
 
             BAM = str(sample_x+'_final.bam')
-            BAI = str(sample_x+'_final.bai')
+            BAI = str(sample_x+'_final.bam.bai')
 
             CONTROL_folder = join(STAMPO,'CONTROLS')
             PCA_folder = join(STAMPO,'PCA')

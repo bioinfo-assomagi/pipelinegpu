@@ -287,6 +287,7 @@ class VariantFilterPipe(ParallelPipe):
         
 
         if self.genome_type == 'geno38':
+            print("RUNNING VEP: {}".format(config.VEPS))
             os.system(' '.join([config.VEPS,'--cache --refseq --offline --use_given_ref --assembly GRCh38 --fasta', config.GENO38,
 				'--fork 8 --force_overwrite --vcf --format vcf --everything --af_1kg',
 				'--buffer_size 500 --force --xref_refseq --exclude_predicted --use_transcript_ref',
