@@ -111,7 +111,8 @@ class Setup(Pipe):
         config.update(upd_config_params)
 
         dir_tree.build(principal_directory)
-        print(dir_tree.principal_directory)
+        print("Principal directory set at: {}".format(dir_tree.principal_directory.path))
+        #print(dir_tree.principal_directory)
 
         #TODO: create the phenotype file here
         kwargs.update({"proj_name": proj_name, "panel": panel, "path": path, "genome": genome, "over": over, "principal_directory": principal_directory, "dest": dest})

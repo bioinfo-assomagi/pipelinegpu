@@ -71,7 +71,7 @@ class DBContext: # TODO: if it will hold the current state of the db while the p
 
         #     return results_df
 
-        def get_disease(samples : list):
+        def get_disease(self, samples : list):
             #print("DB_PATH={}".format(self.db_path))
             #conn = sqlite3.connect(self.db_path)
 
@@ -94,6 +94,23 @@ class DBContext: # TODO: if it will hold the current state of the db while the p
             results_df = pd.DataFrame(results, columns=['sample', 'panel', 'malattia', 'gene'])
             conn.close()
             return results_df
+        
+        def get_sample_familiari(self, samples : list):
+            conn = psycopg2.connect(dbname="limsmagidb", user="bioinfo", password="password", host="192.168.1.87", port="5432")
+            cursor = conn.cursor()  
+
+            sql_query = psycosql.SQL("SELECT sample_id, riferimento, familiarita, familiarita_relativa, select_nucleofamiliare, \"AFFETTO\", sesso \
+                FROM access_accettazione \
+                WHERE sample_id in ({})").format(psycosql.SQL(',').join(map(psycosql.Literal, samples))) 
+
+            cursor.execute(sql_query, samples)
+            results = cursor.fetchall()
+            results_df = pd.DataFrame(results, columns=['Sample Id','Riferimento', 'Familiarita', 'Familiarita Relativa', 'Nucleo Familiare', 'Affeto', 'Sesso'])
+            conn.close()
+
+            return results_df
+        
+
 
         def get_disease_sqlite(self, samples : list):
             print("DB_PATH={}".format(self.db_path))
@@ -114,7 +131,9 @@ class DBContext: # TODO: if it will hold the current state of the db while the p
             conn.close()
             return results_df
 
-        def get_sample_familiari(self, samples):
+        
+        
+        def get_sample_familiari_sqlite(self, samples):
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
 
