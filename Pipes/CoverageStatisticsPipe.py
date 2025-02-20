@@ -468,6 +468,7 @@ class CoverageStatisticsPipe(ParallelPipe):
         coverage = coverage.reset_index()
         coverage['POS'] = coverage['POS'].astype(int)
         new_coverage = pd.merge(coverage,exons, on=['#CHROM','GENE','exone','refseq','length','hgmd','strand'],how='left')
+        self.thread_print("SAMPLE {} COVERAGE \n {}".format(self.sample.name, new_coverage))
         grouped = new_coverage.groupby(['GENE','exone','refseq'])
 
         for name, group in grouped:
@@ -520,6 +521,7 @@ class CoverageStatisticsPipe(ParallelPipe):
             new_group.reset_index(inplace=True)
             new_group.drop('index',axis=1,inplace=True)
             x_df = new_group[new_group['present']==1]
+            print("X_DF just before plot: {}".format(x_df))
     #################################################################################################
     #################################################################################################
             fig = plt.figure(figsize=(10,8))
@@ -620,7 +622,8 @@ class CoverageStatisticsPipe(ParallelPipe):
         folder_final = dir_tree.principal_directory.final.path
         folder_pheno = dir_tree.principal_directory.pheno.path
 
-        lastFOLDER = folder_name.split('/')[-1]
+        lastFOLDER = os.path.basename(os.path.normpath(folder_name))
+        self.thread_print("FOLDERNAME FOR SAMPLE {} IS: {}".format(self.sample.name, folder_name))
 
         if self.dest == 'r':
             dest = 'rovereto'
@@ -681,6 +684,8 @@ class CoverageStatisticsPipe(ParallelPipe):
 
         #out_file_download.write(COV_conformita)
         self.thread_filewrite(COV_conformita, file_download, 'a', self.lock)
+
+        self.thread_print("Finished writing to COV_confromita, for sample {} in file: {}.".format(self.sample.name, file_download))
         
         if self.dest == 'r':
             #out_file_download2.write(COV_conformita)
