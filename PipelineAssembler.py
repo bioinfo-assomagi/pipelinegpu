@@ -44,6 +44,7 @@ from Pipes.InterStage import SampleListFam
 from Pipes.VariantCallPipe import VariantCallPipe
 from Pipes.VariantFilterWrapperPipe import VariantFilterWrapperPipe
 from Pipes.IndelWrapperPipe import IndelWrapperPipe
+from Pipes.MultipleDiseaseChildSampleHandlerPipe import MultipleDiseaseSampleHandlerPipe
 
 
 class PipelineAssembler():
@@ -97,9 +98,9 @@ class PipelineAssembler():
             #return Pipeline(Setup()).assemblePipe(ResyncDBPipe()).assemblePipe(ReadFastQFilesPipe()).assemblePipe(ProcessPipe()).assemblePipe(SampleListFam()).assemblePipe(Fq2BamPipe()).assemblePipe(VariantCallPipe()).assemblePipe(CoverageWrapperPipe()).assemblePipe(VariantFilterWrapperPipe()).assemblePipe(CoverageStatisticsWrapperPipe()).assemblePipe(IndelWrapperPipe()).assemblePipe(EndPipe())
             #return Pipeline(Setup()).assemblePipe(VariantFilterWrapperPipe()).assemblePipe(EndPipe())
             #return Pipeline(Setup()).assemblePipe(ParallelWrapper(Pipeline(VariantFilterPipe()).assemblePipe(AnnotationPipe()))).assemblePipe(EndPipe())
-            return Pipeline(Setup()).assemblePipe(CoverageStatisticsWrapperPipe()).assemblePipe(EndPipe())
+            #return Pipeline(Setup()).assemblePipe(CoverageStatisticsWrapperPipe()).assemblePipe(EndPipe())
             #return Pipeline(Setup()).assemblePipe(IndelWrapperPipe()).assemblePipe(EndPipe())
-            #return Pipeline(Setup()).assemblePipe(VariantFilterWrapperPipe()).assemblePipe(EndPipe())
+            return Pipeline(Setup()).assemblePipe(MultipleDiseaseSampleHandlerPipe()).assemblePipe(CoverageWrapperPipe()).assemblePipe(VariantFilterWrapperPipe()).assemblePipe(EndPipe())
         
         elif pipeline_type == "bamstart":
             return Pipeline(Setup()).assemblePipe(ResyncDBPipe()).assemblePipe(CoverageWrapperPipe()).assemblePipe(VariantCallPipe()).assemblePipe(VariantFilterWrapperPipe()).assemblePipe(EndPipe())
