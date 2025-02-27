@@ -6,9 +6,7 @@ import sys
 import utils
 import glob
 import pandas as pd
-import multiprocessing
 import dir_tree
-import copy
 from Entities.Sample import Sample
 
 from DBContext import DBContext
@@ -68,7 +66,7 @@ class MultipleDiseaseSampleHandlerPipe(Pipe):
     
     def create_sample_list_file(self, samples):
         """ Save updated sample_list (again, complying with the old flow of the pipeline). """
-        
+
         sample_list_df = pd.DataFrame(columns=['name', 'forward', 'reverse'])
         
         for sample in samples:
