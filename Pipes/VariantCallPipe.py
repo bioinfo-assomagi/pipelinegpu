@@ -29,6 +29,7 @@ class VariantCallPipe():
         super().__init__()
 
     def process(self, **kwargs):
+        print("PROGRESS_FLAG:{} - Running Variant Calling (GATK Haplotypecaller and Deepvariant) ... ".format('50%'), flush=True)
         # self.principal_directory = kwargs.pop("principal_directory", None)
         self.principal_directory = dir_tree.principal_directory.path
         sample_jsons = glob.glob(join(dir_tree.principal_directory.sample_data.path, "*.json"))
@@ -64,6 +65,7 @@ class VariantCallPipe():
                                 'pbrun', 'haplotypecaller',
                                 '--ref', "{}/{}".format(config.DOCKER_REFDIR, config.REF_GENOME_NAME),
                                 "--in-bam", os.path.join(docker_input_parabricks, bam_filename),
+                                '--haplotypecaller-options', '-A StrandBiasBySample',
                                 '--out-variants', "{}/{}_pb_gatk.vcf".format(config.DOCKER_OUTPUTDIR, sample_name)])
             
             if os.system(command) != 0:

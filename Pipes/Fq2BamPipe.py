@@ -17,6 +17,7 @@ class Fq2BamPipe(Pipe):
         super().__init__()
 
     def process(self, **kwargs):
+        print("PROGRESS_FLAG:{} - Running BWA (alignment) ... ".format('20%'), flush=True)
         # principal_directory = kwargs.pop("principal_directory", None)
         principal_directory = dir_tree.principal_directory.path
         parabricks_input_directory = dir_tree.principal_directory.parabricks_input.path # TODO: careful with 'parabricks_input' here, store it somewhere globally, or pass it with kwargs

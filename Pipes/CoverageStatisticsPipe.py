@@ -217,8 +217,12 @@ class CoverageStatisticsPipe(ParallelPipe):
             df5['buco_gene'] = df5['buco_gene'].astype(int)
 
             folder_stat = os.path.join(coverage_folder, str(sample_x))
-            if not os.path.exists(folder_stat):
+            try:
                 os.makedirs(folder_stat)
+            except FileExistsError:
+                pass
+            # if not os.path.exists(folder_stat):
+            #     os.makedirs(folder_stat)
             if self.dest == 'r':
                 dest = 'rovereto'
                 path_django = '/home/magi/VIRTUAL/MAGIS/NGS_RESULT/coverage/'
@@ -277,8 +281,10 @@ class CoverageStatisticsPipe(ParallelPipe):
                     'len_gene','len_exon','buco_exone','note','buco_gene','%for_exon','%for_gene','mean','variante']]
 
             folder_stat = os.path.join(coverage_folder, str(sample_x))
-            if not os.path.exists(folder_stat):
+            try:
                 os.makedirs(folder_stat)
+            except FileExistsError:
+                pass
             if self.dest == 'r':
                 dest = 'rovereto'
                 path_django = '/home/magi/VIRTUAL/MAGIS/NGS_RESULT/coverage/'
@@ -401,8 +407,10 @@ class CoverageStatisticsPipe(ParallelPipe):
         stat_ = stat_[['sample','cutoff','count','perc','cov_medio','sesso']]
 
         folder_stat = os.path.join(folder, str(sample_x))
-        if not os.path.exists(folder_stat):
+        try:
             os.makedirs(folder_stat)
+        except FileExistsError:
+            pass
 
         if self.dest == 'r':
             dest = 'rovereto'
@@ -577,26 +585,36 @@ class CoverageStatisticsPipe(ParallelPipe):
             if self.dest == 'r':
                 dest = 'rovereto'
                 folder_VIRTUAL = os.path.join('/home/magi/VIRTUAL/MAGIS/MAGIS/static/NGS_image',sample_x)
-                if not os.path.exists(folder_VIRTUAL):
+                try:
                     os.makedirs(folder_VIRTUAL)
+                except FileExistsError:
+                    pass
             elif self.dest == 'b':
                 dest = 'bolzano'
                 folder_VIRTUAL = os.path.join('/home/magi/VIRTUAL/EUREGIO/EUREGIO/static/NGS_image',sample_x)
-                if not os.path.exists(folder_VIRTUAL):
+                try:
                     os.makedirs(folder_VIRTUAL)
+                except FileExistsError:
+                    pass
             elif self.dest == 's':
                 dest = 'sanfelice'
                 folder_VIRTUAL = os.path.join('/home/magi/VIRTUAL/SANFELICE/SANFELICE/static/NGS_image',sample_x)
-                if not os.path.exists(folder_VIRTUAL):
+                try:
                     os.makedirs(folder_VIRTUAL)
+                except FileExistsError:
+                    pass
             elif self.dest == 'z':
                 dest = 'ricerca'
                 folder_VIRTUAL = os.path.join('/home/magi/VIRTUAL/RICERCA/RICERCA/static/NGS_image',sample_x)
-                if not os.path.exists(folder_VIRTUAL):
+                try:
                     os.makedirs(folder_VIRTUAL)
+                except FileExistsError:
+                    pass
 
-            if not os.path.exists(folder_name):
+            try:
                 os.makedirs(folder_name)
+            except FileExistsError:
+                pass
 
             name2 = name.replace(' ','')
             fig_name = sample_x+'_'+name2+'.png'
@@ -629,10 +647,20 @@ class CoverageStatisticsPipe(ParallelPipe):
             dest = 'rovereto'
             path_download = '/home/magi/VIRTUAL/EUREGIO/DOWNLOADS/NGSINFO/CONFORMITA_COV/ROVERETO/%s' % (lastFOLDER)
             path_download2 = '/home/magi/VIRTUAL/MAGIS/DOWNLOADS/NGSINFO/CONFORMITA_COV/%s' % (lastFOLDER)
-            if not os.path.exists(path_download):
+            try:
                 os.makedirs(path_download)
-            if not os.path.exists(path_download2):
+            except FileExistsError:
+                pass
+            try:
                 os.makedirs(path_download2)
+            except FileExistsError:
+                pass
+
+            # if not os.path.exists(path_download):
+            #     os.makedirs(path_download)
+            # if not os.path.exists(path_download2):
+            #     os.makedirs(path_download2)
+            
             file_download2 = (os.path.join(path_download2,'COV_CONFORMITA_'+lastFOLDER))
             self.thread_filewrite('SAMPLE'+'\t'+'MEDIA'+'\t'+'COV 10X'+'\t'+'COV 25X'+'\t'+'Target 25%'+'\t'+'Sex'+'\t'+'10X<95%'+'\n', file_download2, 'w', self.lock)
             # out_file_download2 = open(file_download2,"w")
@@ -640,18 +668,30 @@ class CoverageStatisticsPipe(ParallelPipe):
         elif self.dest == 'b':
             dest = 'bolzano'
             path_download = '/home/magi/VIRTUAL/EUREGIO/DOWNLOADS/NGSINFO/CONFORMITA_COV/BOLZANO/%s' % (lastFOLDER)
-            if not os.path.exists(path_download):
+            try:
                 os.makedirs(path_download)
+            except FileExistsError:
+                pass
+            # if not os.path.exists(path_download):
+            #     os.makedirs(path_download)
         elif self.dest == 's':
             dest = 'sanfelice'
             path_download = '/home/magi/VIRTUAL/SANFELICE/DOWNLOADS/NGSINFO/CONFORMITA_COV/%s' % (lastFOLDER)
-            if not os.path.exists(path_download):
+            try:
                 os.makedirs(path_download)
+            except FileExistsError:
+                pass
+            # if not os.path.exists(path_download):
+            #     os.makedirs(path_download)
         elif self.dest == 'z':
             dest = 'ricerca'
             path_download = '/home/magi/VIRTUAL/RICERCA/DOWNLOADS/NGSINFO/CONFORMITA_COV/%s' % (lastFOLDER)
-            if not os.path.exists(path_download):
+            try:
                 os.makedirs(path_download)
+            except FileExistsError:
+                pass
+            # if not os.path.exists(path_download):
+            #     os.makedirs(path_download)
 
         file_download = (os.path.join(path_download,'COV_CONFORMITA_'+lastFOLDER))
         self.thread_filewrite('SAMPLE'+'\t'+'MEDIA'+'\t'+'COV 10X'+'\t'+'COV 25X'+'\t'+'Target 25%'+'\t'+'Sex'+'\t'+'10X<95%'+'\n', file_download, "w", self.lock)

@@ -22,7 +22,7 @@ class MultipleDiseaseSampleHandlerPipe(Pipe):
         super().__init__()
  
     def process(self, **kwargs):
-        
+        print("PROGRESS_FLAG:{} - Running MultipleDiseaseSamplehandler ... ".format('60%'), flush=True)
         # Get the samples (parents) you've processed so far
         sample_dict = {}
         sample_jsons = glob.glob(os.path.join(dir_tree.principal_directory.sample_data.path, "*.json"))
@@ -45,8 +45,13 @@ class MultipleDiseaseSampleHandlerPipe(Pipe):
             sample_dict[spawn_id] = spawn_object
             
         
-        self.create_sample_list_file(sample_dict.values())
-        self.create_phenotype_file()
+        try:
+            self.create_sample_list_file(sample_dict.values())
+            self.create_phenotype_file()
+        except Exception as e:
+            print(str(e), flush=True)
+            sys.exit(1)
+            
 
         
         return kwargs
@@ -56,7 +61,7 @@ class MultipleDiseaseSampleHandlerPipe(Pipe):
         # TODO: replace by DBContext call.
         # {"ref_id": "sample_id"} or {"parent_id": "spawn_id"}
         sample_mapping = {
-            "E366.2024" : "E99.2024",
+            #"E366.2024" : "E99.2024",
             #"1.2017" : "1.2017"
         }
 

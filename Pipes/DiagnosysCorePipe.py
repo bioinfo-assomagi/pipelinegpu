@@ -694,7 +694,7 @@ class ProcessPipe(Pipe):
     """
     
     def process(self, **kwargs):
-
+        print("PROGRESS_FLAG:{} - Running quality control ... ".format('10%'), flush=True)
         with multiprocessing.Pool(32) as pool:
             pool.map(self.worker, self.prepare_args(**kwargs))
             pool.close()
@@ -730,7 +730,9 @@ class ProcessPipe(Pipe):
 class CoverageWrapperPipe(Pipe):
 
     def process(self, **kwargs):
-
+        
+        print("PROGRESS_FLAG:{} - Running Coverage Analysis ... ".format('60%'), flush=True)
+        
         with multiprocessing.Pool(32) as pool:
             pool.map(self.worker, self.prepare_args(**kwargs))
             pool.close()

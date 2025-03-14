@@ -12,6 +12,7 @@ from Entities.Sample import Sample
 class VariantFilterWrapperPipe(Pipe):
 
     def process(self, **kwargs):
+        print("PROGRESS_FLAG:{} - Running Variant filtering and VEP annotation ... ".format('80%'), flush=True)
         # args_list = self.prepare_args(**kwargs)
         # for kwargs in args_list:
         #     Pipeline(VariantFilterPipe()).start(**kwargs)

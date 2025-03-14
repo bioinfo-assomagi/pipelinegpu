@@ -163,6 +163,8 @@ class VariantCallPipeIndel(ParallelPipe):
 
         #ANALYZE CNV
         print ('ANALYZE CNV!!!\n')
+        # NOTE: if the control group is not good, the cutoff of 3.5 and -2.6 are used
+        # 
         # bashCommand3=(' '.join(['CoNVaDING.pl -mode StartWithBestScore ','-inputDir',join(folder_indel,sample_x),'-controlsDir ',CONTROL_folder,
         # 						'-sexChr','-zScoreCutOffLow=-3.2','-zScoreCutOffHigh 3.2 ','-outputDir',join(folder_indel,sample_x)]))
         bashCommand3=(' '.join(['perl','/home/magi/PROJECT/diagnosys/bin/CoNVaDING.pl -mode StartWithBestScore ','-inputDir',join(folder_indel,sample_x),'-controlsDir ',CONTROL_folder,

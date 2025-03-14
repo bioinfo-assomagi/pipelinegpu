@@ -15,6 +15,7 @@ class CoverageStatisticsWrapperPipe(Pipe):
         # for kwargs in args_list:
         #     Pipeline(VariantFilterPipe()).start(**kwargs)
         
+        print("PROGRESS_FLAG:{} - Running Coverage Statistics ... ".format('70%'), flush=True)
 
         with multiprocessing.Pool(32) as pool:
             pool.map(self.worker, self.prepare_args(**kwargs))

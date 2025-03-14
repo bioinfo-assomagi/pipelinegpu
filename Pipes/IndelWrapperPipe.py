@@ -12,6 +12,7 @@ from Entities.Sample import Sample
 class IndelWrapperPipe(Pipe):
 
     def process(self, **kwargs):
+        print("PROGRESS_FLAG:{} - Running INDEL detection (ConVADING) ... ".format('70%'))
         # args_list = self.prepare_args(**kwargs)
         # for kwargs in args_list:
         #     Pipeline(VariantFilterPipe()).start(**kwargs)
