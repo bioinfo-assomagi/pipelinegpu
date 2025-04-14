@@ -12,7 +12,7 @@ from sklearn.svm import SVC
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn import tree
 
-
+# test git ale
 def funcSVN(DF):
     hmean = 0.471707
     hstd = 0.067168
