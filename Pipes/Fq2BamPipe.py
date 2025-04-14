@@ -93,5 +93,13 @@ class Fq2BamPipe(Pipe):
             sample.bai = "{}/{}_final.bam.bai".format(os.path.join(principal_directory, "bam"), sample_name)
             sample.saveJSON()
 
+            os.remove(sample.forward)
+            os.remove(sample.reverse)
+            
+            fw = sample.forward.replace("_new", "")
+            os.remove(fw)
+            rv = sample.reverse.replace("_new", "")
+            os.remove(rv)
+
         # kwargs.update({"principal_directory": principal_directory, "samples": resynced_samples_list})
         return kwargs

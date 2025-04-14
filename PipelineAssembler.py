@@ -89,8 +89,12 @@ class PipelineAssembler():
         :raises ValueError: If an unknown pipeline type is provided.
         """
         
+        pipeline_type = "vcf_first"
+
         if pipeline_type == "resource":
             pass
+        elif pipeline_type == "bam":
+            return Pipeline(Setup()).assemblePipe(ResyncDBPipe()).assemblePipe(ProcessPipe()).assemblePipe(SampleListFam()).assemblePipe(Fq2BamPipe()).assemblePipe(EndPipe())
         elif pipeline_type == "test":
             return Pipeline(Setup()).assemblePipe(ResyncDBPipe()).assemblePipe(ReadFastQFilesPipe()).assemblePipe(ProcessPipe()).assemblePipe(SampleListFam()).assemblePipe(Fq2BamPipe()).assemblePipe(CoverageWrapperPipe()).assemblePipe(VariantCallPipe()).assemblePipe(CoverageStatisticsWrapperPipe()).assemblePipe(VariantFilterWrapperPipe()).assemblePipe(EndPipe())
         elif pipeline_type == "vcf_first":
@@ -100,8 +104,14 @@ class PipelineAssembler():
             #return Pipeline(Setup()).assemblePipe(ParallelWrapper(Pipeline(VariantFilterPipe()).assemblePipe(AnnotationPipe()))).assemblePipe(EndPipe())
             #return Pipeline(Setup()).assemblePipe(CoverageStatisticsWrapperPipe()).assemblePipe(EndPipe())
             #return Pipeline(Setup()).assemblePipe(IndelWrapperPipe()).assemblePipe(EndPipe())
-            return Pipeline(Setup()).assemblePipe(ResyncDBPipe()).assemblePipe(ReadFastQFilesPipe()).assemblePipe(ProcessPipe()).assemblePipe(Fq2BamPipe()).assemblePipe(VariantCallPipe()).assemblePipe(MultipleDiseaseSampleHandlerPipe()).assemblePipe(CoverageWrapperPipe()).assemblePipe(CoverageStatisticsWrapperPipe()).assemblePipe(IndelWrapperPipe()).assemblePipe(VariantFilterWrapperPipe()).assemblePipe(EndPipe())
-        
+            #return Pipeline(Setup()).assemblePipe(ResyncDBPipe()).assemblePipe(ReadFastQFilesPipe()).assemblePipe(ProcessPipe()).assemblePipe(Fq2BamPipe()).assemblePipe(VariantCallPipe()).assemblePipe(MultipleDiseaseSampleHandlerPipe()).assemblePipe(CoverageWrapperPipe()).assemblePipe(CoverageStatisticsWrapperPipe()).assemblePipe(IndelWrapperPipe()).assemblePipe(VariantFilterWrapperPipe()).assemblePipe(EndPipe())
+            return Pipeline(Setup()).assemblePipe(ResyncDBPipe()).assemblePipe(ReadFastQFilesPipe()).assemblePipe(ProcessPipe()).assemblePipe(Fq2BamPipe()).assemblePipe(VariantCallPipe()).assemblePipe(MultipleDiseaseSampleHandlerPipe()).assemblePipe(CoverageWrapperPipe()).assemblePipe(CoverageStatisticsWrapperPipe()).assemblePipe(VariantFilterWrapperPipe()).assemblePipe(EndPipe())
+            #return Pipeline(Setup()).assemblePipe(VariantCallPipe()).assemblePipe(MultipleDiseaseSampleHandlerPipe()).assemblePipe(CoverageWrapperPipe()).assemblePipe(CoverageStatisticsWrapperPipe()).assemblePipe(IndelWrapperPipe()).assemblePipe(VariantFilterWrapperPipe()).assemblePipe(EndPipe())
+        elif pipeline_type == "vcf":
+            return Pipeline(Setup()).assemblePipe(ResyncDBPipe()).assemblePipe(ReadFastQFilesPipe()).assemblePipe(ProcessPipe()).assemblePipe(Fq2BamPipe()).assemblePipe(VariantCallPipe()).assemblePipe(EndPipe())
+        elif pipeline_type == "annotation":
+            # return Pipeline(Setup()). 
+            pass
         elif pipeline_type == "bamstart":
             return Pipeline(Setup()).assemblePipe(ResyncDBPipe()).assemblePipe(CoverageWrapperPipe()).assemblePipe(VariantCallPipe()).assemblePipe(VariantFilterWrapperPipe()).assemblePipe(EndPipe())
         

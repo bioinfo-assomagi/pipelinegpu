@@ -65,7 +65,7 @@ class VariantCallPipe():
                                 'pbrun', 'haplotypecaller',
                                 '--ref', "{}/{}".format(config.DOCKER_REFDIR, config.REF_GENOME_NAME),
                                 "--in-bam", os.path.join(docker_input_parabricks, bam_filename),
-                                '--haplotypecaller-options', '-A StrandBiasBySample',
+                                '--haplotypecaller-options', '"-A StrandBiasBySample -A DepthPerAlleleBySample"',
                                 '--out-variants', "{}/{}_pb_gatk.vcf".format(config.DOCKER_OUTPUTDIR, sample_name)])
             
             if os.system(command) != 0:
