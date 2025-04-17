@@ -100,199 +100,6 @@
 
 
 
-# def PrintLog(command,folder):
-#     ###Print all commands in a log file
-# 	path = join(folder,'Commands4.log')
-# 	cl = open(path,'a')
-# 	cl.write(command)
-# 	cl.write('\n')
-# 	cl.close()
-
-# def sample(name):
-# 	x = name.split("/")
-# 	x = (x[-1])
-# 	x = x.split("_")
-# 	sample = str(x[0])
-# 	return str(sample)
-# #############################################################################
-# def label_encode(df, columns):
-#     for col in columns:
-#         le = LabelEncoder()
-#         col_values_unique = list(df[col].unique())
-#         le_fitted = le.fit(col_values_unique)
-#         col_values = list(df[col].values)
-#         le.classes_
-#         col_values_transformed = le.transform(col_values)
-#         df[col] = col_values_transformed
-# #############################################################################
-# def get_train_test(df, y_col, ratio):
-# 	mask = np.random.rand(len(df)) < ratio
-# 	df_train = df[mask]
-# 	df_test = df[~mask]
-# 	Y_ALL = df[y_col].values
-# 	Y_train = df_train[y_col].values
-# 	Y_test = df_test[y_col].values
-# 	del df_train[y_col]
-# 	del df_test[y_col]
-# 	del df[y_col]
-# 	X_ALL = df.values
-# 	X_train = df_train.values
-# 	X_test = df_test.values
-# 	return X_ALL,Y_ALL,X_train, Y_train, X_test, Y_test
-# #############################################################################
-# def plot_decision_region(X,y, classifier,test_idx=None,resolution=0.02):
-# 	markers = ('o','x','v','^','s')
-# 	colors = ('orange','cyan','lightgreen','green','blue')
-# 	colors2 = ('red','green','lightgreen','blue','blue')
-# 	cmap = ListedColormap(colors[:len(np.unique(y))])
-# 	cmap2 = ListedColormap(colors2[:len(np.unique(y))])
-# 	x1_min,x1_max= X[:,0].min() - 0.5, X[:,0].max() +0.5
-# 	x2_min,x2_max = X[:,1].min() - 0.5, X[:,1].max() +0.5
-# 	#x3_min,x3_max = X[:,2].min() - 0.5, X[:,2].max() +0.5
-# 	xx1, xx2, = np.meshgrid(np.arange(x1_min,x1_max,resolution), np.arange(x2_min,x2_max,resolution))
-# 	Z = classifier.predict(np.array([xx1.ravel(), xx2.ravel()]).T)
-# 	Z = Z.reshape(xx1.shape)
-# 	###################################################
-# 	plt.figure(1,figsize=(10,8))
-# 	#plt.pcolormesh(xx1,xx2,Z,alpha=0.4,cmap=plt.cm.Paired)
-# 	plt.contourf(xx1,xx2,Z,alpha=0.6,cmap=cmap)
-# 	plt.xlim(xx1.min(),xx1.max())
-# 	plt.ylim(xx2.min(),xx2.max())
-# 	#plt.xticks(())
-# 	#plt.yticks(())
-# 	X_test, y_test = X[test_idx,:],y[test_idx]
-# 	for idx, cl in enumerate(np.unique(y)):
-# 		plt.scatter(x=X[y==cl,0],y=X[y==cl,1],alpha=0.4,c=cmap2(idx), marker=markers[idx],label=cl)
-# 	if test_idx:
-# 		x_test, y_test = X[test_idx,:], y[test_idx]
-# 		plt.scatter(X_test[:,0],X_test[:,1],c='',alpha=1.0,linewidth=1,
-# 				marker='o',s=90,label='test set')
-
-# 	plt.xlabel('PCA')
-# 	plt.ylabel('Conferma Sanger')
-# 	plt.legend(loc='best')
-# 	plt.show()
-# #############################################################################
-# def funcSVN(DF):
-# 	hmean = 0.471707
-# 	hstd = 0.067168
-# 	x2 = 0.340057441652
-# 	y2= 0.603356263732
-
-# 	sample = DF['sample_id'].drop_duplicates()
-# 	DF = DF[['hgvs','conferma','samtools','gatk','UNBAL','qual',
-# 			'depth','internal_maf','tipo','sample_id','gene']]
-
-# 	DF['UNBAL'] = DF['UNBAL'].astype(float)
-# 	mask1 = DF['UNBAL'] < x2
-# 	mask2 = (DF['UNBAL'] > y2) & (DF['UNBAL'] < 0.9)
-# 	DF.loc[mask1,'UNBALCLASS'] = 'NO'
-# 	DF.loc[mask2,'UNBALCLASS'] = 'NO'
-# 	DF['UNBALCLASS'].fillna('SI',inplace=True)
-# 	DFQUAL = DF[['conferma','gatk']]
-# 	DFforstats = DF[['conferma','gatk','qual']]
-# ########LABEL ENCODING##############################################
-# 	to_be_encoded_cols = DFQUAL.columns.values
-# 	label_encode(DFforstats, to_be_encoded_cols)
-# ########TEST TRAINING################################################
-# 	y_col = 'conferma'
-# 	train_test_ratio = 0.7
-# 	X_ALL,Y_ALL,X_train,Y_train,X_test,Y_test = get_train_test(DFforstats, y_col, train_test_ratio)
-# ########DECISIONAL TREE PROCESS AND GRAPH#########################################
-# 	_treeall_ = tree.DecisionTreeClassifier(criterion='entropy',max_depth=2,random_state=0)
-# 	_treeall_.fit(X_ALL,Y_ALL)
-# 	#print _treeall_.predict([[0,20]])
-# 	#print _treeall_.predict_proba([[0,20]])
-# 	#print _treeall_.score([[0,20]],[[1]])
-# 	return _treeall_.fit(X_ALL,Y_ALL)
-#############################################################################
-# def evaluate_contamination(sampledata,samplename):
-# 	hmean = 0.471707
-# 	hstd = 0.067168
-# 	x2 = 0.340057441652
-# 	y2= 0.603356263732
-
-# 	#print sampledata[['types','QUAL','DEPTH','samtools_geno']].dtypes
-# 	try:
-# 		sampledata_correct = sampledata[(sampledata['samtools_geno']=='het') & (sampledata['gatk_geno']=='het') &\
-# 			(sampledata['types']=='SVN') & (sampledata['QUAL']>=18) & (sampledata['DEPTH']>20) & (sampledata['unbalance'] != 'del=nan')]
-# 		sampledata_correct.loc[:,'UNBAL'] = sampledata_correct['unbalance'].str.split('=').str.get(1).astype(float)
-# 		xmean = sampledata_correct['UNBAL'].mean()
-# 		xstd = sampledata_correct['UNBAL'].std()
-# 		sampledata_correct['zscore'] = (sampledata_correct['UNBAL']-hmean)/hstd
-# 		count = len(sampledata_correct)
-# 		menocount = len(sampledata_correct[sampledata_correct['UNBAL']<x2])
-# 		piucount = len(sampledata_correct[sampledata_correct['UNBAL']>y2])
-# 		totcount = menocount+piucount
-
-# 		#perccount = (float(totcount)/float(count))*100
-# 		try: perccount = (float(totcount)/float(count))*100
-# 		except: perccount = 0
-
-# 		menozscore = len(sampledata_correct[sampledata_correct['zscore']<-2])
-# 		piuzscore =  len(sampledata_correct[sampledata_correct['zscore']>+2])
-# 		totzscore = menozscore+piuzscore
-# 		#perczscore = (float(totzscore)/float(count))*100
-# 		try: perczscore = (float(totzscore)/float(count))*100
-# 		except: perczscore = 0
-
-# 		#print totcount,count,perccount,perczscore
-# 	  	#sampledata['xmean'] = '{:,.2f}'.format(xmean)
-# 	  	#sampledata['xstd'] = '{:,.2f}'.format(xstd)
-# 	  	#sampledata['count'] = '{:,.2f}'.format(count)
-# 	  	#sampledata['menocount'] = '{:,.2f}'.format(menocount)
-# 	  	#sampledata['piucount'] = '{:,.2f}'.format(piucount)
-# 	  	#sampledata['totcount'] = '{:,.2f}'.format(totcount)
-# 	  	#sampledata['perccount'] = '{:,.2f}'.format(perccount)
-# 	  	#sampledata['menozscore'] = '{:,.2f}'.format(menozscore)
-# 	  	#sampledata['piuzscore'] = '{:,.2f}'.format(piuzscore)
-# 	  	#sampledata['totzscore'] = '{:,.2f}'.format(totzscore)
-# 	  	#sampledata['perczscore'] = '{:,.2f}'.format(perczscore)
-# 		sampledata['probcontaminazione'] = '{:,.2f}'.format(perczscore)
-
-# 	except:
-# 		sampledata['probcontaminazione'] = 0
-
-# 	#print sampledata['probcontaminazione']
-# 	return sampledata
-
-
-# def make_mafdecisional(samplefinalnew,sample_x):
-# 	staralg = samplefinalnew	#[['gnomAD_exomes_POPMAX_AF','MAX_MAF','Adj_MAF','ExAC_MAF']]
-# 	staralg['Adj_MAF2'] = staralg['Adj_MAF']
-# 	staralg['Adj_MAF2'].fillna('unknown',inplace=True)
-# 	staralg['Adj_MAF2'] = staralg['Adj_MAF2'].astype(str)
-# 	staralg['Adj_MAF2'] = staralg['Adj_MAF2'].str.split('&').str.get(0)
-# 	staralg['Adj_MAF2'].replace('gnomAD_ASJ','exclude',inplace=True)
-# 	staralg['Adj_MAF2'].replace('gnomAD_FIN','exclude',inplace=True)
-# 	staralg['Adj_MAF2'].replace('gnomAD_OTHER','exclude',inplace=True)
-# 	staralg['Adj_MAF2'].replace('gnomAD_OTH','exclude',inplace=True)
-# 	staralg['MAX_MAF'].fillna(-999,inplace=True)
-# 	mask1 = staralg['Adj_MAF2'].str.contains('gnomAD')
-# 	staralg.loc[mask1,'MAX_MAF2'] = staralg['MAX_MAF']
-# 	mask2 = staralg['MAX_MAF2'] == 1
-# 	staralg.loc[mask2,'MAX_MAF2'] = np.nan
-# 	staralg['decisionINFO'] = None
-# 	staralg['decisionmaf'] = staralg['gnomAD_exomes_POPMAX_AF']
-# 	staralg['decisionINFO'] = np.where(staralg['decisionmaf'].notnull(),'POPMAX',staralg['decisionmaf'])
-# 	staralg['decisionmaf'].fillna(staralg['MAX_MAF2'],inplace=True)
-# 	staralg['decisionINFO'] = np.where(staralg['decisionmaf']==staralg['MAX_MAF2'],'POP',staralg['decisionINFO'])
-# 	staralg['decisionmaf'].fillna(staralg['ExAC_MAF'],inplace=True)
-# 	staralg['decisionINFO'].replace('nan','ALL',inplace=True)
-# 	print (staralg[['decisionmaf','MAX_MAF2','gnomAD_exomes_POPMAX_AF']])
-# 	return staralg
-
-# def evaluate_sex(samplefinalnew,samplename):
-# 	print ('samplename')
-# 	pass
-
-from joblib import load
-import os
-import glob
-import pandas as pd
-from pathlib import Path
-import numpy as np
-
 
 
 
@@ -307,52 +114,106 @@ import numpy as np
 from joblib import load
 
 
-def addprediction(sampledata, samplename, model):
+def addprediction(sampledata, samplename, model, p_threshold=0.9):
+    """
+    Per ogni variante SVN con QUAL>0, calcola la probabilità di conferma e la 
+    trasforma in un call binario usando la soglia p_threshold.
+    probsanger: se 1 nosanger, se 0 sanger
+    """
     sampledata['QUAL'] = pd.to_numeric(sampledata['QUAL'], errors='coerce')
     sampledata['DEPTH'] = pd.to_numeric(sampledata['DEPTH'], errors='coerce')
 
-    # Crea una maschera per selezionare le righe di interesse (tipicamente, variant type SVN con QUAL > 0)
-    mask = (sampledata['types'] == 'SVN') & (sampledata['QUAL'] > 0)
     
-    # Prepara il DataFrame delle feature per la predizione
-    # Nota: il modello è stato addestrato con colonne in minuscolo: 'qual' (logaritmo) e 'depth'
-    features = sampledata.loc[mask, ['QUAL', 'DEPTH']].copy()
-    features['qual'] = np.log(features['QUAL'])
-    features['depth'] = features['DEPTH']
-    features = features[['qual', 'depth']]  # Riordina le colonne in modo che corrispondano
-       
-    # Inizializza la colonna 'probsanger' a 0 per tutte le righe
-    sampledata['probsanger'] = 0
-    
-    # Se esistono righe selezionate, calcola le probabilità tramite il modello
-    if not features.empty:
-        # Il modello è una pipeline: le feature in input verranno trasformate e poi passate al logistic
-        probs = model.predict_proba(features)[:, 1]  
-        sampledata.loc[mask, 'probsanger'] = np.round(probs, 2)
-    
-    # Rinomina le colonne in minuscolo (se necessario) per mantenere la consistenza
-    sampledata.rename(columns={'QUAL': 'qual', 'DEPTH': 'depth'}, inplace=True)
+    mask = (sampledata['types'] == 'SVN') & (sampledata['QUAL'] > 0)  # Maschera sulle righe da processare
+
+    feats = sampledata.loc[mask, ['QUAL', 'DEPTH']].copy()
+    feats['qual'] = np.log(feats['QUAL'])
+    feats['depth'] = feats['DEPTH']
+    feats = feats[['qual', 'depth']]
+    X = feats[['qual', 'depth']].values                               # qui prendi l'array numpy, non il DataFrame
+
+    sampledata['probsanger'] = 0                                      # Se ci sono righe valide, calcola probabilità e poi threshold
+    if X.shape[0] > 0:
+        probs = model.predict_proba(X)[:, 1] 
+        calls = (probs >= p_threshold).astype(int)
+        sampledata.loc[mask, 'probsanger'] = calls
+
+
     return sampledata
 
+
+def evaluate_contamination(sampledata, hmean: float = 0.471707, hstd:  float = 0.067168, low_th: float = 0.340057441652,high_th: float = 0.603356263732):
+    """
+    Lo script filtra il DataFrame alle varianti SNP eterozigoti confermate da Samtools e GATK con QUAL elevato, profondità adeguata e unbalance valido
+    Dalla colonna “unbalance” estrae il valore numerico e lo converte in un campo UNBAL in formato float
+    Per ogni variante calcola uno zscore normalizzando UNBAL rispetto a una media e deviazione standard predefinite
+    Vengono quindi contati i siti con zscore estremi o con UNBAL al di fuori delle soglie attese
+    Infine ne ricava la percentuale di varianti anomale, la formatta con due decimali e la assegna alla colonna probcontaminazione
+    La percentuale di contaminazione è: (# righe con |zscore| > 2) / (# righe totali) * 100
+    """
+    mask = (
+        (sampledata['gatk_geno']    == 'het') &
+        (sampledata['types']        == 'SVN') &
+        (pd.to_numeric(sampledata['QUAL'], errors='coerce') >= 60) & # 60 of phred quality score for gatk correpsond to (error)1/1000000 = 0.0001%	(accuracy 1- error) 99.9999%
+        (pd.to_numeric(sampledata['DEPTH'], errors='coerce') > 20) &
+        sampledata['unbalance'].notna() &
+        (sampledata['unbalance'] != 'del=nan')
+    )
+
+    unbal = (sampledata.loc[mask, 'unbalance'].str.split('=', n=1).str[1].astype(float))
+    z = (unbal - hmean) / hstd
+    tot = len(z)
+    num_extreme = (z.abs() > 2).sum()
+    percz = (num_extreme / tot * 100) if tot else 0.0
+    sampledata['probcontaminazione'] = f"{percz:,.2f}"
+
+    return sampledata
+
+
+
+def make_mafdecisional(sampledata):
+    """
+    Returns a DataFrame with two new columns:
+      - 'decisionmaf': the chosen MAF value
+      - 'decisionINFO': source of the chosen value ('POPMAX', 'POP', 'ExAC', or 'ALL')
+    """
+    sampledata = sampledata.copy()
+    # Prepare Adj_MAF2 by stripping suffixes and excluding certain gnomAD populations
+    exclude_pops = ['gnomAD_ASJ', 'gnomAD_FIN', 'gnomAD_OTHER', 'gnomAD_OTH']
+    sampledata['Adj_MAF2'] = (sampledata['Adj_MAF'].fillna('unknown').astype(str).str.split('&', n=1).str[0].replace({pop: 'exclude' for pop in exclude_pops}))
+
+    # Compute MAX_MAF2: only for rows where Adj_MAF2 contains 'gnomAD', and drop exact-1 values
+    sampledata['MAX_MAF2'] = np.where(sampledata['Adj_MAF2'].str.contains('gnomAD', na=False),sampledata['MAX_MAF'].replace(1, np.nan),np.nan)
+
+    # Build decisionmaf by priority: POPMAX > MAX_MAF2 > ExAC_MAF
+    sampledata['decisionmaf'] = (sampledata['gnomAD_exomes_POPMAX_AF'].combine_first(sampledata['MAX_MAF2']).combine_first(sampledata['ExAC_MAF']))
+
+    # Annotate source of decision with vectorized select
+    conditions = [sampledata['gnomAD_exomes_POPMAX_AF'].notna(),sampledata['decisionmaf'] == sampledata['MAX_MAF2']]
+    choices = ['POPMAX', 'POP']
+    sampledata['decisionINFO'] = np.select(conditions, choices, default='ALL')
+
+    return sampledata
 ##############################################################################
+
 if __name__ == "__main__":
     directory = "/home/alessandro/PROJECT/RESULT/job22_VARIANTSRED_R_q25_90_OCULARE_OCULARE/final"
     pattern = "*_pheno_annot.csv"
     file_list = glob.glob(os.path.join(directory, pattern))
 
-    file_pkl = '/home/alessandro/PROJECT/SKLEARN/logistic_model.pkl'
-    model = load(file_pkl)
+    model = load('/home/alessandro/PROJECT/SKLEARN/logistic_model.pkl')
 
-    if file_list:
-        for file in file_list:
-            filepath = Path(file)
-            sample_id = filepath.name.split('_')[0]  # esempio: '415.2024_pheno_annot.csv' → '415.2024'
-            pheno_annot = pd.read_csv(file, sep='\t')
-            samplepred = addprediction(pheno_annot, sample_id, model)
-            # Stampo le colonne desiderate:
-            # Uso le colonne originali "QUAL" e "DEPTH" (invece di "qual" e "depth") per evitare KeyError.
-            print(samplepred[['sample', 'HGVS', 'GENE', 'qual', 'depth', 'probsanger']])
-            samplepred[['sample','HGVS','types','depth' ,'qual','probsanger']].to_csv('/home/alessandro/PROJECT/RESULT/test.csv', index = False)
+    for file in file_list:
+        filepath = Path(file)
+        sample_id = filepath.name.split('_')[0]
+        pheno_annot = pd.read_csv(file, sep='\t')
+
+        samplepred = addprediction(pheno_annot, sample_id, model)
+        PREsamplefinalnew = evaluate_contamination(samplepred)
+        samplefinalnew = make_mafdecisional(PREsamplefinalnew)
+
+        # out_cols = ['sample', 'HGVS', 'types', 'DEPTH', 'QUAL', 'probsanger', 'probcontaminazione']
+        samplefinalnew.to_csv('/home/alessandro/PROJECT/RESULT/test.csv', index=False)
 
 
 
@@ -380,7 +241,7 @@ if __name__ == "__main__":
 				##################################
 				# PREsamplefinalnew = evaluate_contamination(samplepred,sample_x)
 				##################################
-	# 			samplefinalnew = make_mafdecisional(PREsamplefinalnew,sample_x)
+				# samplefinalnew = make_mafdecisional(PREsamplefinalnew,sample_x)
 	# 			##################################
 	# 			# if args.dest == 'r':
 	# 			# 	dest = 'rovereto'
