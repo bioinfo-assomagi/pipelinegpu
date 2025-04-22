@@ -599,4 +599,6 @@ class AnnotationPipe(Pipe):
         depth_filtered_out = os.path.join(dir_tree.principal_directory.final.path, str(self.sample.name) + "_pheno_annot.csv")
         depth_filtered.to_csv(depth_filtered_out, sep="\t", index=False, encoding='utf-8')
         self.pheno_annot = depth_filtered_out
+        self.sample.pheno_annot = depth_filtered_out
+        self.sample.saveJSON()
 
