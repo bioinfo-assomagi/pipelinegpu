@@ -9,6 +9,7 @@ import os
 import json
 from Pipes.Pipe import Pipe
 from Entities.Sample import Sample
+import config
 
 
 class SangerPredictionPipe(Pipe):
@@ -19,7 +20,7 @@ class SangerPredictionPipe(Pipe):
 
     def __init__(self):
         # Carica il modello (hard‑coded path)
-        model_path = "/home/alessandro/PROJECT/SKLEARN/logistic_model.pkl"
+        model_path = config.SANGER_MODEL
         self.model = load(model_path)
 
         # Colonne per i due output

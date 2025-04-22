@@ -7,6 +7,7 @@ from Pipes.Pipe import Pipe
 from Pipeline import Pipeline
 from Pipes.VariantFilterPipe import VariantFilterPipe
 from Pipes.AnnotationPipe import AnnotationPipe
+from Pipes.SangerPredictionPipe import SangerPredictionPipe
 from Entities.Sample import Sample
 
 class VariantFilterWrapperPipe(Pipe):
@@ -26,7 +27,7 @@ class VariantFilterWrapperPipe(Pipe):
 
     def worker(self, kwargs): # TODO: let's add the subsequent pipes here? And change the name from VariantFilterWrapper to something else? And launch or the remianing steps
         # as a Pipeline itself, that will lead to multiple Pipelines being launched in parallel.
-        Pipeline(VariantFilterPipe()).assemblePipe(AnnotationPipe()).start(**kwargs)
+        Pipeline(VariantFilterPipe()).assemblePipe(AnnotationPipe()).assemblePipe(SangerPredictionPipe()).start(**kwargs)
 
     def prepare_args(self, **kwargs):
         l = []
