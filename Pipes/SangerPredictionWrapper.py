@@ -10,7 +10,7 @@ from Entities.Sample import Sample
 class SangerWrapper(Pipe):
 
     def process(self, **kwargs):
-        print("PROGRESS_FLAG:70% - Running SangerWrapper…")
+        print("PROGRESS_FLAG: Running SangerWrapper…")
         # usa il numero di thread passato da kwargs, altrimenti il massimo disponibile
         n_procs = int(kwargs.get('threads', multiprocessing.cpu_count()))
         args_list = self.prepare_args(**kwargs)

@@ -70,6 +70,7 @@ class VcfQualityFilter(Pipe):
         ]
         subprocess.run(cmd_merge, check=True)
         sample.vcf_quality_filtered = merged_vcf
+        sample.saveJSON()
 
         kwargs['sample'] = sample
         return kwargs
