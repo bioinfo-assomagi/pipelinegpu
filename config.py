@@ -99,7 +99,8 @@ class CustomConfigParser():
             'GENEOBNEW': self.get('VERTICAL', 'GENEOBNEW'),
             'CANCER': self.get('VERTICAL', 'CANCER'),
             'OVERWRITE': self.get('MISC', 'OVERWRITE'),
-            'PIPELINETYPE': self.get('MISC', 'PIPELINETYPE')
+            'PIPELINETYPE': self.get('MISC', 'PIPELINETYPE'),
+            'SANGER_MODEL': self.get('MODELS', 'SANGER_MODEL')
 
             # 'PARABRICKS_INPUTDIR': self.get('PARABRICKS', 'INPUTDIR_NAME')
         }

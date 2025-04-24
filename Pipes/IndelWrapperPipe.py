@@ -5,17 +5,14 @@ import os
 
 from Pipes.Pipe import Pipe
 from Pipeline import Pipeline
-from Pipes.VariantFilterPipe import VariantFilterPipe
-from Pipes.AnnotationPipe import AnnotationPipe
-from Pipes.SangerPredictionPipe import SangerPredictionPipe
+from Pipes.VariantCallPipeIndel import VariantCallPipeIndel
+from Pipes.IndelInterpretationPipe import IndelInterpretationPipe
 from Entities.Sample import Sample
-from Pipes.VcfQualityFilter import VcfQualityFilter
 
-
-class VariantFilterWrapperPipe(Pipe):
+class IndelWrapperPipe(Pipe):
 
     def process(self, **kwargs):
-        print("PROGRESS_FLAG:{} - Running Variant filtering and VEP annotation ... ".format('80%'), flush=True)
+        print("PROGRESS_FLAG:{} - Running INDEL detection (ConVADING) ... ".format('70%'))
         # args_list = self.prepare_args(**kwargs)
         # for kwargs in args_list:
         #     Pipeline(VariantFilterPipe()).start(**kwargs)
@@ -29,7 +26,8 @@ class VariantFilterWrapperPipe(Pipe):
 
     def worker(self, kwargs): # TODO: let's add the subsequent pipes here? And change the name from VariantFilterWrapper to something else? And launch or the remianing steps
         # as a Pipeline itself, that will lead to multiple Pipelines being launched in parallel.
-        Pipeline(VcfQualityFilter()).assemblePipe(VariantFilterPipe()).assemblePipe(AnnotationPipe()).assemblePipe(SangerPredictionPipe()).start(**kwargs)
+        Pipeline(VariantCallPipeIndel()).assemblePipe(IndelInterpretationPipe()).start(**kwargs)
+        #Pipeline(IndelInterpretationPipe()).start(**kwargs)
 
     def prepare_args(self, **kwargs):
         l = []

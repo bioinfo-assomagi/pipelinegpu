@@ -82,9 +82,11 @@ def create_null_coverage(x,y):
 	return RANGE
 
 def create_vertical2(bed_df):
-    bed_df['POS'] = [[x for x in range(bed_df.at[i, 'START'], bed_df.at[i, 'END'] + 1)] for i in bed_df.index]
-    vertical = bed_df.drop(['START', 'END'], axis=1).explode('POS').reset_index()
-    return vertical.drop_duplicates(vertical.drop_duplicates(subset=['CHROM','POS'],inplace=True))
+	bed_df['POS'] = [[x for x in range(bed_df.at[i, 'START'], bed_df.at[i, 'END'] + 1)] for i in bed_df.index]
+	vertical = bed_df.drop(['START', 'END'], axis=1).explode('POS').reset_index()
+	vertical.drop_duplicates(subset=['#CHROM','POS', 'GENE'], inplace=True)
+	return vertical[['#CHROM','POS','GENE','exone','length','strand','refseq','hgmd']]
+
 
 def create_vertical(DATA,DATAX,FILENAME,FOLDER):
 	df1 = pd.DataFrame()

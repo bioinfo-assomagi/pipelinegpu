@@ -10,8 +10,7 @@ class EndPipe(Pipe):
         pass
 
     def process(self, **kwargs):
-        self.thread_id = kwargs.pop("thread_id", None)
-        print("End Pipe reached. The process with id:{} will now be terminated ...".format(self.thread_id))
+        print("End Pipe reached. The pipeline will now be terminated ...")
 
         return kwargs
         

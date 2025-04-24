@@ -1,5 +1,6 @@
-
 import sqlite3
+import psycopg2
+from psycopg2 import sql as psycosql
 import pandas as pd
 import config
 import threading
@@ -28,7 +29,90 @@ class DBContext: # TODO: if it will hold the current state of the db while the p
         #     #     self.db_path = config.DB_RICERCA
 
         
+        # def get_disease(self, samples : list):
+        #     print("DB_PATH={}".format(self.db_path))
+        #     #conn = sqlite3.connect(self.db_path)
+
+        #     conn = psycopg2.connect(dbname="limsmagidb", user="bioinfo", password="password", host="192.168.1.87", port="5432")
+
+        #     cursor = conn.cursor()  
+
+        #     sql = "SELECT acept_sample.sample, acept_pannelli.pannello, acept_malattia.malattia, acept_geni.gene \
+        #         from acept_sample \
+        #         left join acept_malattia on acept_sample.fenotipo_id = acept_malattia.id \
+        #         left join acept_malattia_gene_list on acept_malattia.id = acept_malattia_gene_list.malattia_id \
+        #         left join acept_geni on acept_malattia_gene_list.geni_id = acept_geni.id \
+        #         left join acept_pannelli on acept_sample.panel_id = acept_pannelli.id \
+        #         where acept_sample.sample in ({}) \
+        #         order by sample ASC, pannello ASC, malattia ASC, gene ASC".format(','.join(['?']*len(samples))) 
+
+        #     # results = cursor.execute(sql, samples)
+        #     cursor.execute(sql, samples)
+        #     results = cursor.fetchall()
+        #     results_df = pd.DataFrame(results, columns=['sample', 'panel', 'malattia', 'gene'])
+        #     conn.close()
+        #     return results_df
+
+        # def get_sample_familiari(self, samples):
+        #     #conn = sqlite3.connect(self.db_path)
+        #     conn = psycopg2.connect(dbname="limsmagidb", user="bioinfo", password="password", host="192.168.1.87", port="5432")
+
+        #     cursor = conn.cursor()
+
+        #     sql = "SELECT sample_id, riferimento, familiarita, familiarita_relativa, select_nucleofamiliare, AFFETTO, sesso \
+        #         FROM access_accettazione \
+        #         WHERE sample_id in ({})".format(','.join(['?']*len(samples)))
+
+        #     #results = cursor.execute(sql, samples)
+        #     cursor.exectue(sql, samples)
+        #     results = cursor.fetchall()
+        #     results_df = pd.DataFrame(results, columns=['Sample Id','Riferimento', 'Familiarita', 'Familiarita Relativa', 'Nucleo Familiare', 'Affeto', 'Sesso'])
+        #     conn.close()
+
+        #     return results_df
+
         def get_disease(self, samples : list):
+            #print("DB_PATH={}".format(self.db_path))
+            #conn = sqlite3.connect(self.db_path)
+
+            conn = psycopg2.connect(dbname="limsmagidb", user="bioinfo", password="password", host="192.168.1.87", port="5432")
+
+            cursor = conn.cursor()  
+
+            sql_query = psycosql.SQL("SELECT acept_sample.sample, acept_pannelli.pannello, acept_malattia.malattia, acept_geni.gene \
+                from acept_sample \
+                left join acept_malattia on acept_sample.fenotipo_id = acept_malattia.id \
+                left join acept_malattia_gene_list on acept_malattia.id = acept_malattia_gene_list.malattia_id \
+                left join acept_geni on acept_malattia_gene_list.geni_id = acept_geni.id \
+                left join acept_pannelli on acept_sample.panel_id = acept_pannelli.id \
+                where acept_sample.sample in ({}) \
+                order by sample ASC, pannello ASC, malattia ASC, gene ASC").format(psycosql.SQL(',').join(map(psycosql.Literal, samples))) 
+
+            #results = cursor.execute(sql, samples)
+            cursor.execute(sql_query, samples)
+            results = cursor.fetchall()
+            results_df = pd.DataFrame(results, columns=['sample', 'panel', 'malattia', 'gene'])
+            conn.close()
+            return results_df
+        
+        def get_sample_familiari(self, samples : list):
+            conn = psycopg2.connect(dbname="limsmagidb", user="bioinfo", password="password", host="192.168.1.87", port="5432")
+            cursor = conn.cursor()  
+
+            sql_query = psycosql.SQL("SELECT sample_id, riferimento, familiarita, familiarita_relativa, select_nucleofamiliare, \"AFFETTO\", sesso \
+                FROM access_accettazione \
+                WHERE sample_id in ({})").format(psycosql.SQL(',').join(map(psycosql.Literal, samples))) 
+
+            cursor.execute(sql_query, samples)
+            results = cursor.fetchall()
+            results_df = pd.DataFrame(results, columns=['Sample Id','Riferimento', 'Familiarita', 'Familiarita Relativa', 'Nucleo Familiare', 'Affeto', 'Sesso'])
+            conn.close()
+
+            return results_df
+        
+
+
+        def get_disease_sqlite(self, samples : list):
             print("DB_PATH={}".format(self.db_path))
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()  
@@ -47,7 +131,9 @@ class DBContext: # TODO: if it will hold the current state of the db while the p
             conn.close()
             return results_df
 
-        def get_sample_familiari(self, samples):
+        
+        
+        def get_sample_familiari_sqlite(self, samples):
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
 
@@ -60,7 +146,6 @@ class DBContext: # TODO: if it will hold the current state of the db while the p
             conn.close()
 
             return results_df
-
 
 # class DBContext:
 

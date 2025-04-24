@@ -1,8 +1,36 @@
+import numpy as np
+import pandas as pd
 import logging
 import config # TODO: utils should not know about config, fix it
 import os
 import json
 
+from sklearn.preprocessing import StandardScaler, LabelEncoder
+
+def label_encode(df, columns):
+    for col in columns:
+        le = LabelEncoder()
+        col_values_unique = list(df[col].unique())
+        le_fitted = le.fit(col_values_unique)
+        col_values = list(df[col].values)
+        le.classes_
+        col_values_transformed = le.transform(col_values)
+        df[col] = col_values_transformed
+
+def get_train_test(df, y_col, ratio):
+    mask = np.random.rand(len(df)) < ratio
+    df_train = df[mask]
+    df_test = df[~mask]
+    Y_ALL = df[y_col].values
+    Y_train = df_train[y_col].values
+    Y_test = df_test[y_col].values
+    del df_train[y_col]
+    del df_test[y_col]
+    del df[y_col]
+    X_ALL = df.values
+    X_train = df_train.values
+    X_test = df_test.values
+    return X_ALL,Y_ALL,X_train, Y_train, X_test, Y_test
 
 def define_vcf_paths(sample_id, dir_tree):
     vcf_dir = dir_tree.principal_directory.vcf.path
@@ -114,7 +142,9 @@ def group_samples(fastq_files):
 
     for fastq_file in fastq_files:
         sample_name = fastq_file.split("/")[-1].split("_")[0]
-
+        print("'\033[95m' Inside group_samples; fastq_file = {} '\033[0m'".format(fastq_file))
+        print("'\033[95m' Sample name = {} '\033[0m'".format(sample_name))
+        print("Sample dict = {}".format(sample_dict))
         if sample_name not in sample_dict:
             sample_dict[sample_name] = {
                 "name": str(sample_name),
@@ -122,9 +152,11 @@ def group_samples(fastq_files):
                 "reverse": None,
             }
 
-        if "R1" in fastq_file:
+        if "R1_" in fastq_file.split("/")[-1]:
+            print("Entered: R1 is in the fastq_file")
             sample_dict[sample_name]["forward"] = fastq_file
-        elif "R2" in fastq_file:
+        elif "R2_" in fastq_file.split("/")[-1]:
+            print("Entered: R2 is in the fastq_file")
             sample_dict[sample_name]["reverse"] = fastq_file
 
     return sample_dict

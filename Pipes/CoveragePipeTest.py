@@ -40,6 +40,8 @@ class CoveragePipeTest(Pipe):
         self.summary_macroarea()
         self.clean_temp_dir()
 
+        #TODO: save results paths to sample.json
+
         kwargs.update({"panel": self.panel, "sample": self.sample, "dest": dest}) # only if donwstream pipes of the same thread will be present
         return kwargs
 
@@ -48,6 +50,13 @@ class CoveragePipeTest(Pipe):
         pass
 
     def load_prereq(self):
+        """
+        The load_prereq function is responsible for specifically loading the vertical file - which again, is just an 
+        exploded version of the BED file. The BED file loaded here, is the Panel specific BED file, as the disease
+        specific BED file is already stored in the `Sample` object. At the same time, a file named buchiartificiali
+        is loaded, that contains custom positions that are assumed to fall in regions of low coverage. 
+        buchiartificiali in the current implementation, following the conventions of the old one is located in: /PROJECT/diagnosys/bin
+        """
         #self.vertical_df, self.verticalX_df, self.vertical_macro_df = self.get_vertical_dataframes()
         _vertical_macro_path = utils.get_vertical_macro(self.panel)
         if _vertical_macro_path is not None:
@@ -59,6 +68,17 @@ class CoveragePipeTest(Pipe):
         
 
     def count_unbalance(self):
+        """
+        Simple, call ``samtools mpileup`` and the _to_count file is produced, containing for each position in the
+        covered regions of the genome, the piled bases, for each read which is aligned (covers) into that position.
+
+        Then, due to the output being so large, the data is processed in chunks, and the bases our counted, after filtering the chunk with the BED
+        files loaded from the load_prereq() function.
+
+        TODO: make this functions receive inputs, instead of taking everything implicitly from the Sample object.
+        Extract the data from the Sample object, and feed the data as arguments into these functions, to better 
+        document them.
+        """
         sample_name = str(self.sample.name)
         try:
             bam = self.sample.bam
