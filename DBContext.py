@@ -96,6 +96,7 @@ class DBContext: # TODO: if it will hold the current state of the db while the p
             return results_df
         
         def get_sample_familiari(self, samples : list):
+
             conn = psycopg2.connect(dbname="limsmagidb", user="bioinfo", password="password", host="192.168.1.87", port="5432")
             cursor = conn.cursor()  
 
@@ -110,7 +111,21 @@ class DBContext: # TODO: if it will hold the current state of the db while the p
 
             return results_df
         
+        
+        def run_query(self, query, args):
+            conn = psycopg2.connect(dbname="limsmagidb", user="bioinfo", password="password", host="192.168.1.87", port="5432")
+            cursor = conn.cursor()
 
+            # sql_query = psycosql.SQL(query)
+            cursor.execute(query, args)
+            results = cursor.fetchall()
+
+            conn.close()
+
+            return results
+        
+
+        """ Be careful, these are in sqlite; don't use them to access postgres. """
 
         def get_disease_sqlite(self, samples : list):
             print("DB_PATH={}".format(self.db_path))
@@ -146,6 +161,9 @@ class DBContext: # TODO: if it will hold the current state of the db while the p
             conn.close()
 
             return results_df
+        
+        
+        
 
 # class DBContext:
 
