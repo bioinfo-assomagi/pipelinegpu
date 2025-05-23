@@ -422,7 +422,7 @@ class CoverageStatisticsPipe(ParallelPipe):
             dest = 'ricerca'
             path_django = '/home/magi/VIRTUAL/RICERCA/NGS_RESULT/coverage/'
 
-        #stat_.to_csv(join(path_django,sample_x+'_stat_cov.csv'),sep='\t',index=False,encoding='utf-8')
+        stat_.to_csv(os.path.join(path_django,sample_x+'_stat_cov.csv'),sep='\t',index=False,encoding='utf-8')
         csv_stat = os.path.join(folder_stat,sample_x+'_stat_cov.csv')
         stat_.to_csv(csv_stat,sep='\t',index=False,encoding='utf-8')
         #system(' '.join(['scp',csv_stat,"bioinfo@192.168.1.133:/home/magi/VIRTUAL38/apimagi_dev/NGS_RESULT/coverage"]))

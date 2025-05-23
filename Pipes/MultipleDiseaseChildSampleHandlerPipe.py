@@ -89,7 +89,12 @@ class MultipleDiseaseSampleHandlerPipe(Pipe):
 
         return df
 
-
+    """
+    |sample_id  | origin_id |
+    |-----------|-----------|
+    | 9997.2024 | 9997.2024 |
+    | 9997B.2024| 9997.2024 |
+    """
     def create_spawn_jsons(self, spawn_mapping: pd.DataFrame) -> None:
         """ Additionally, it adds the spawwns to the class sample_dict. """
         # Create the json for the spawned childs. Up to this point, the spawns will be identical copies of the parents. They will share the same values for their attributes.
