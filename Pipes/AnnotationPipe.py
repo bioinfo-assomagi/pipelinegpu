@@ -558,13 +558,13 @@ class AnnotationPipe(Pipe):
         sample_phenotype = phenotype[phenotype['sample'].astype(str) == sample_name][['malattia', 'gene']].drop_duplicates()
         #a = phenotype_[['malattia', 'gene']].drop_duplicates()
         
-        x1 = pd.DataFrame(sample_phenotype['gene'])
-        if missing_df is not None:
-            for gene in sample_phenotype['gene']:
-                for index, missing_gene in missing_df.iterrows():
-                    if str(gene) == str(missing_gene.MISSING):
-                        x2 = pd.DataFrame({'gene': pd.Series([str(missing_gene.HGNC_SYMBOL)])})
-                        x1 = x1.append(x2)
+        # x1 = pd.DataFrame(sample_phenotype['gene'])
+        # if missing_df is not None:
+        #     for gene in sample_phenotype['gene']:
+        #         for index, missing_gene in missing_df.iterrows():
+        #             if str(gene) == str(missing_gene.MISSING):
+        #                 x2 = pd.DataFrame({'gene': pd.Series([str(missing_gene.HGNC_SYMBOL)])})
+        #                 x1 = x1.append(x2)
 
         b = CDS
         b['strand'].fillna(1, inplace=True)
