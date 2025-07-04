@@ -29,8 +29,9 @@ class VariantFilterPipe(ParallelPipe):
         self.panel = kwargs.pop("panel", None)
         self.genome_type = kwargs.pop("genome", "geno38")
 
-        self.thread_print("TESTING VARIANT Filter PIPE: {}".format(self.sample.name))
+        #self.thread_print("TESTING VARIANT Filter PIPE: {}".format(self.sample.name))
 
+        #self.SORfilter()
         self.Filter()
         self.Merge()
         self.VEP()
@@ -43,6 +44,44 @@ class VariantFilterPipe(ParallelPipe):
         return kwargs
       
     
+    # def _exlusion_helper(self):
+    #     """ Helper function for exclusive join of the strand biased vcf with the main vcf file. """
+    #     main_vcf = self.sample.vcf_path_haplotypecaller
+    #     main_vcf_df = pd.read_csv(main_vcf, sep='\t', comment='#', names=['#CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO', 'FORMAT', str(self.sample.name)])
+    #     strand_biased_vcf = self.sample.vcf_strand_biased
+    #     strand_biased_vcf_df = pd.read_csv(strand_biased_vcf, sep='\t', comment='#', names=['#CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO', 'FORMAT', str(self.sample.name)])
+        
+    #     filtered_main_vcf_df = pd.merge(main_vcf_df, strand_biased_vcf_df, on=['#CHROM', 'POS'], how='left')
+    #     pass
+
+
+    # def SORfilter(self):
+    #     """ THis is a prefilter of the outputted vcfs from the gatk_filter pipe, removing variants with strand bias. """
+
+    #     # make haplotypecaller be the vcf_quality_filtered_vcf; and save the old one as backup
+    #     haplotypecaller_vcf = pd.read_csv(self.sample.vcf_path_haplotypecaller, sep='\t', comment='#', names=['#CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO', 'FORMAT', str(self.sample.name)])
+    #     haplotypecaller_vcf.to_csv(self.sample.vcf_path_haplotypecaller + ".backup", sep='\t', index=False)
+    #     self.sample.vcf_path_haplotypecaller_backup = self.sample.vcf_path_haplotypecaller + ".backup"
+
+    #     #self.sample.vcf_path_haplotypecaller = self.sample.vcf_quality_filtered
+    #     # remove the highSORS
+    #     # the temporaries will have issue removing this
+    #     os.remove(self.sample.vcf_path_haplotypecaller)
+    #     vcf_quality_filtered = self.sample.vcf_quality_filtered
+    #     with open(vcf_quality_filtered) as f:
+    #         header = [l for l in f if l.startswith('#')]
+            
+            
+    #     df = pd.read_csv(vcf_quality_filtered, sep='\t', comment='#', names=['#CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO', 'FORMAT', str(self.sample.name)])
+    #     df_filtered = df[~df["FILTER"].str.contains('HighSOR', na=False)]
+
+    #     #with open(self.sample.vcf_path_haplotypecaller, 'w') as out:
+    #         #out.writelines(header)
+    #     df_filtered.to_csv(self.sample.vcf_path_haplotypecaller, sep='\t', index=False, header=False)
+
+    #     self.sample.saveJSON()
+    
+
     def Filter(self):
         """ Filter the vcf files with the regions present in the BED file (exones/CDS).
             Additionally it removes variants that fall in buchi regions (regions specified in the buchiartificiali file.)
@@ -72,7 +111,7 @@ class VariantFilterPipe(ParallelPipe):
         # Remove 0/0 from deepvariant results
         filter_cds_vcf_deepvariant['genotype'] = filter_cds_vcf_deepvariant[str(self.sample.name)].str.split(':').str[0]
         filter_intronic_vcf_deepvariant['genotype'] = filter_intronic_vcf_deepvariant[str(self.sample.name)].str.split(':').str[0]
-        self.thread_print("Removing low quality vcfs from deepvariant ... ")
+        self.thread_print("Removing low quality vcfs from deepvariant ... ", name = self.__class__.__name__)
         filter_cds_vcf_deepvariant = filter_cds_vcf_deepvariant[(~filter_cds_vcf_deepvariant['genotype'].isin(['./.', '0/0'])) & (filter_cds_vcf_deepvariant['QUAL'] != 0.0)]
         filter_intronic_vcf_deepvariant = filter_intronic_vcf_deepvariant[(~filter_intronic_vcf_deepvariant['genotype'].isin(['./.', '0/0'])) & (filter_intronic_vcf_deepvariant['QUAL'] != 0.0)]
         
@@ -138,6 +177,7 @@ class VariantFilterPipe(ParallelPipe):
         
         if vcf_type == 'haplotypecaller':
             vcf = pd.read_csv(sample.vcf_path_haplotypecaller, sep='\t', comment='#', names=['#CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO', 'FORMAT', str(sample.name)])
+            #vcf = self.strand_bias_filter()
         elif vcf_type == 'deepvariant':
             vcf = pd.read_csv(sample.vcf_path_deepvariant, sep='\t', comment='#', names=['#CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO', 'FORMAT', str(sample.name)])
         else:

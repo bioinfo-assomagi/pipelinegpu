@@ -2,6 +2,8 @@ import argparse
 import time
 from multiprocessing import Process, Queue
 import sys
+import logging
+from LogFormatter import ColorFormatter
 
 import config as config
 from PipelineAssembler import PipelineAssembler
@@ -133,6 +135,9 @@ def tests():
     elif pipeline_type == 'coverage':
         print("Im in coverage ...")
         Pipeline(Setup()).assemblePipe(ResyncDBPipe()).assemblePipe(SampleListFam()).assemblePipe(CoverageWrapperPipe()).start(**vars(args))
+    elif pipeline_type == 'bam':
+        PipelineAssembler().factory('bam').start(**vars(args))
+        sys.exit(1)
         
     #Pipeline(Setup()).assemblePipe(VariantCallPipe()).start(**vars(args))
     #Pipeline(Setup()).assemblePipe(VariantFilterWrapperPipe()).start(**vars(args))
@@ -142,6 +147,12 @@ def tests():
 
 if __name__ == "__main__":
     # args = parseInput()
+
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(ColorFormatter())
+    root = logging.getLogger()
+    root.setLevel(logging.DEBUG)
+    root.addHandler(handler)
     
     print("Currently unavailable. Coming back soon ... ")
 

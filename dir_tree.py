@@ -79,7 +79,7 @@ class DirectoryTreeBuilder():
     tree = None
     list_dir = None
 
-    def __init__(self, principal_directory):
+    def __init__(self, principal_directory):        
         self.principal_directory = principal_directory
         self.directories = None
 
@@ -93,6 +93,7 @@ class DirectoryTreeBuilder():
         """
         
         principal_directory = self.principal_directory
+
 
         if principal_directory == None:
             raise Exception("Principal Directory not specified!")
@@ -156,7 +157,7 @@ def explore_directory_tree(directory_tree, parent_path, l, d):
                 d[child_name] = dotdict({})
                 explore_directory_tree(child, current_path, l, d[child_name])
 
-def build(principal_directory):
+def build(principal_directory, create=True):
     """
     Builds the directory tree starting from the specified principal directory and updates global variables
     with the directory paths.
@@ -164,7 +165,10 @@ def build(principal_directory):
     :param principal_directory: The root directory where the tree will be built.
     :type principal_directory: str
     """
-     
+    
+    if not create and not os.path.isdir(principal_directory):
+        raise Exception(f"Directory doesn't exist: {principal_directory} \n If you want to create it, remove the create=False flag.")
+
     d = DirectoryTreeBuilder(principal_directory).run()
     globals().update(d)
 

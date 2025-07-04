@@ -17,6 +17,8 @@ from Entities.Sample import Sample
 from Pipeline import Pipeline
 from Pipes.CoveragePipeTest import CoveragePipeTest
 
+import logging
+
 """
 3 Pipelines contained here - PrincipalFolderPipe, ReadFastQFilesPipe, ProcessFastQFilesPipe
 
@@ -77,11 +79,12 @@ class PrincipalFolderPipe(Pipe):
             result = pipe.process(over=True, name_folder='/path/to/project', dest='dest_id')
         """
 
-        print("Inside PrincipalFolderPipe ... ")
+        #print("Inside PrincipalFolderPipe ... ")
     
         over = kwargs.pop("over", None)  # if True, overwrites old data
         principal_directory = kwargs.pop('name_folder', None)
         dest = kwargs.pop('dest', None)
+        self._logger = logging.getLogger(__name__)
 
         if os.path.exists(principal_directory):
             if not over:
@@ -94,7 +97,7 @@ class PrincipalFolderPipe(Pipe):
         #self.create_paths(principal_directory)
 
         kwargs.update({'over': over, 'principal_directory': principal_directory, 'dest': dest})
-        print("Principal Directory: {}".format(principal_directory))
+        self._logger.debug("Principal Directory: {}".format(principal_directory))
 
         return kwargs
         
@@ -116,7 +119,7 @@ class PrincipalFolderPipe(Pipe):
             pipe.create_paths('/path/to/principal_directory')
         """
 
-        print('Building tree folder...')
+        self._logger.info('Building tree folder...')
         os.makedirs(principal_directory)
         directories = ["fastq", 
                         "fastqfiltered", 
@@ -193,10 +196,10 @@ class ResyncDBPipe(Pipe):
 
             result = pipe.process(dest='server_id')
         """
-        
+        self._logger = logging.getLogger(__name__)
         server_id = kwargs.pop("dest", None)
 
-        print("Resyncing DB ... no need to, anymore. Direct connection to LIMSDB will be established in the subsequent steps.")
+        self._logger.warning("Resyncing DB ... no need to, anymore. Direct connection to LIMSDB will be established in the subsequent steps.")
         db_server = utils.get_db_server(server_id)
         local_db_path = utils.get_db_path(server_id)
         #os.system("rsync -avz -e ssh {} {}".format(db_server, config.DB_PATH))
@@ -253,6 +256,8 @@ class ReadFastQFilesPipe(Pipe):
         fastq = kwargs.pop('fastq', None)
         dest = kwargs.pop('dest', None)
 
+        self._logger = logging.getLogger(__name__)
+
         fastq_files = self.copy_fastq_files(fastq, dest, principal_directory)
 
         #self.store_sample_data(fastq_files)
@@ -284,7 +289,7 @@ class ReadFastQFilesPipe(Pipe):
             fastq_files = pipe.copy_fastq_files('/path/to/source', 'server_id', '/path/to/destination')
         """
 
-        print('Copying fastq files ... ')
+        self._logger.info('Copying fastq files ... ')
         fastq_folder = join(destination, 'fastq/')
 
         if fastq_source:
@@ -295,7 +300,7 @@ class ReadFastQFilesPipe(Pipe):
                 elif 'phenotype' in file:
                     'Copying phenotype file...ever is better check inside this file....'
                 else:
-                    print(file, 'is not a VALID file and will not copy')
+                    self._logger.debug("{}is not a VALID file and will not copy".format(file))
         else:
             if server_id == 'r':
                 #files_fq = os.system(' '.join(['scp root@192.168.2.188:/sharedfolders/NGS/tmp/analysis/germinal/*', fastq_folder])) #added
@@ -342,10 +347,10 @@ class UnzipFastQFilesPipe(Pipe):
         # principal_directory = kwargs.pop("name_folder")
         fastq_files = kwargs.pop("fastq_files")
         #fastq_files = glob.glob(fastq_folder + '*')
-        #utils.thread_print(self.thread_id, "Inside UnzipFastQFilesPipe pipe. List of fastq_files = {}".format(fastq_files))
+        #utils.print(self.thread_id, "Inside UnzipFastQFilesPipe pipe. List of fastq_files = {}".format(fastq_files))
         unizzped_fastq_files = self.unzip_fastq(fastq_files)
-        utils.thread_print(self.thread_id, "Inside UnzipFastQFilesPipe pipe. List of unizzped_fastq_files = {}".format(unizzped_fastq_files))
-        # TODO: replace by self.thread_print?
+        #utils.print(self.thread_id, "Inside UnzipFastQFilesPipe pipe. List of unizzped_fastq_files = {}".format(unizzped_fastq_files))
+        # TODO: replace by utils.print?
         kwargs.update({"fastq_folder": fastq_folder, "fastq_files": unizzped_fastq_files, "thread_id": self.thread_id})
         return kwargs
 
@@ -356,11 +361,11 @@ class UnzipFastQFilesPipe(Pipe):
         # fastq_files = glob.glob(fastq_folder+'*')
 
         # Rename the files
-        utils.thread_print(self.thread_id, "Renaming FastQ files ... ")
+        #utils.print(self.thread_id, "Renaming FastQ files ... ")
 
         unzipped_files = []
         for file in fastq_files:
-            utils.thread_print(self.thread_id, "Old filename: {}".format(file))
+            #utils.print(self.thread_id, "Old filename: {}".format(file))
             a = file.split("/")
             if '-' in a[-1]:
                 x = a[-1].split("-")
@@ -372,12 +377,12 @@ class UnzipFastQFilesPipe(Pipe):
             name = x1[0]
             files3 = file.replace('-', '.')
             filename_new = re.sub(r"(_S\d+_L\d+|_L\d+)", '', files3)
-            utils.thread_print(self.thread_id, "New filename: {}".format(filename_new))
+            #utils.print(self.thread_id, "New filename: {}".format(filename_new))
             os.rename(file, filename_new)
 
             if 'new' not in filename_new: #NOTE: 'new' is not related to filename_new. 'new' is appended after fastq_quality_control and fastx_trimmer. filename_new is just a processed filename according to the rules above
                 if '.gz' in filename_new:
-                    utils.thread_print(self.thread_id, 'unzip files...')
+                    #utils.print(self.thread_id, 'unzip files...')
                     os.system(' '.join(['gunzip', filename_new]))
                     unzipped_files.append(
                         filename_new[:-3])  # since the unzipped file will not contain .gz extension in its filename NOTE: this name is also automatically generated by 'gunzip'?
@@ -398,10 +403,13 @@ class ProcessFastQFilesPipe2(Pipe):
         #principal_directory = kwargs.pop("principal_directory")
         fastq_files = kwargs.pop("fastq_files")
 
+        self._logger = logging.getLogger(__name__)
+
         threads = kwargs.pop("threads")
         quality = kwargs.pop("quality")
         quality_perc = kwargs.pop("quality_perc")
-        print("GPU Pipeline: quality = {}, quality_perc = {}".format(quality, quality_perc))
+        self._logger.debug("GPU Pipeline: quality = {}, quality_perc = {}".format(quality, quality_perc))
+
         self.thread_id = kwargs.pop("thread_id")
 
         fastqc_folder = join(principal_directory, 'fastQC/')
@@ -413,17 +421,18 @@ class ProcessFastQFilesPipe2(Pipe):
              "fastq_files": porecessed_fastq_files, "threads": threads, "quality": quality,
              "quality_perc": quality_perc, "thread_id": self.thread_id})  # TODO: remove args if not used anymore
         
-        utils.thread_print(self.thread_id, "ProcessFastQFilesPipe finished excecuting FastQC and FastXTrimmer!")
+        self._logger.debug("ProcessFastQFilesPipe finished excecuting FastQC and FastXTrimmer!")
         return kwargs
 
     def process_fastq(self, fastq_files, fastqc_folder, threads, quality, quality_perc):
-        utils.thread_print(self.thread_id, "Inside process_fastq function. List of fastq_files = {}".format(fastq_files))
+        self._logger.debug("Inside process_fastq function. List of fastq_files = {}".format(fastq_files))
+
         # list_file = glob.glob(fastq_folder+'*')
         processed_files = []
         for fastq_file in fastq_files:
-            utils.thread_print(self.thread_id, "Processing fastq_file ... {}".format(fastq_file))
+            #utils.print(self.thread_id, "Processing fastq_file ... {}".format(fastq_file))
             if not fastq_file.endswith('new'):
-                tools.FastQC(fastq_file, t=threads, o=fastqc_folder)
+                tools.FastQC(fastq_file, t=threads, o=fastqc_folder, capture_output=True)
                 quality_filter_res = tools.FastQualityFilter(v=True, Q33=True, q=str(quality), p=str(quality_perc),
                                                              i=fastq_file, capture_output=True)
                 #print("quality_filter_res = {}".format(quality_filter_res))
@@ -432,7 +441,7 @@ class ProcessFastQFilesPipe2(Pipe):
                 processed_file = "{}_new.fastq".format(fastq_file[:-6])
                 processed_files.append(processed_file)
 
-        utils.thread_print(self.thread_id, "Processed fastq_files: {}".format(processed_files))
+        self._logger.info("Processed fastq_files: {}".format(processed_files))
         return processed_files
 
 
@@ -465,6 +474,7 @@ class SetSamplesPipe(ParallelPipe):
         dest = kwargs.pop("dest")
         fastq = kwargs.pop("fastq")
         self.thread_id = kwargs.pop("thread_id")
+        self._logger = logging.getLogger(__name__)
 
         df_samples = self.set_samples(principal_directory, fastq_files, dest)
 
@@ -472,7 +482,7 @@ class SetSamplesPipe(ParallelPipe):
             {"principal_directory": principal_directory, "fastq_files": fastq_files, "dest": dest, "fastq": fastq,
              "samples_dataframe": df_samples, "thread_id": self.thread_id})
         
-        self.thread_print("Pipe finished execution!")
+        self._logger.info("Pipe finished execution!")
         return kwargs
 
     def set_samples(self, principal_directory, fastq_files, dest):
@@ -486,7 +496,7 @@ class SetSamplesPipe(ParallelPipe):
         df_samples.sort_values(by=['name'], inplace=True)
         df_samples.to_csv(join(principal_directory, "sample_list_{}.csv".format(self.thread_id)), sep='\t', index=False, encoding='utf-8')
 
-        self.thread_print("Samples {} written to: {}".format(sample_dict.keys(), join(principal_directory, "sample_list_{}.csv".format(self.thread_id))))
+        self._logger.info("Samples {} written to: {}".format(sample_dict.keys(), join(principal_directory, "sample_list_{}.csv".format(self.thread_id))))
 
         # for fastq_file in fastq_files:
         #     fastq_name = fastq_file.split('/')[-1]  # get the name of the fastq_file without the absolute path
@@ -500,7 +510,7 @@ class SetSamplesPipe(ParallelPipe):
         #     elif 'R2' in fastq_name:
         #         sample_dict[sample_name]['reverse'] = fastq_file
 
-        # #utils.thread_print(self.thread_id, "sample_dict = {}".format(sample_dict))
+        # #utils.print(self.thread_id, "sample_dict = {}".format(sample_dict))
 
         return df_samples
 
@@ -570,13 +580,14 @@ class PreAlignmentPipe(Pipe):
         genome = kwargs.pop('genome')
         df_samples = kwargs.pop('samples_dataframe')
         principal_directory = dir_tree.principal_directory.path
+        self._logger = logging.getLogger(__name__)
         self.thread_id = kwargs.pop("thread_id", None)
         queue = kwargs.pop("queue", None)
 
         resynced_samples = []
         for index, sample in df_samples.iterrows():
             resynced_sample = self.prealignment(principal_directory, genome, sample)
-            print(os.path.join(dir_tree.principal_directory.sample_data.path, "{}.json".format(resynced_sample['name'])))
+            self._logger.debug(os.path.join(dir_tree.principal_directory.sample_data.path, "{}.json".format(resynced_sample['name'])))
             sample = Sample.fromJSON(os.path.join(dir_tree.principal_directory.sample_data.path, "{}.json".format(resynced_sample['name'])))
             
                                
@@ -619,10 +630,10 @@ class PreAlignmentPipe(Pipe):
         forward = sample['forward']
         reverse = sample['reverse']
 
-        print("Syncing read: {}".format(forward))
-        print("Syncing read: {}".format(reverse))
+        #utils.print("Syncing read: {}".format(forward), 'debug', self.__class__.__name__)
+        #utils.print("Syncing read: {}".format(reverse), 'debug', self.__class__.__name__)
 
-        #utils.thread_print(self.thread_id, sample)
+        #utils.print(self.thread_id, sample)
 
         try:
             # if genome == 'geno38':
@@ -663,18 +674,18 @@ class PreAlignmentPipe(Pipe):
             
             read_group = '"@RG\\tID:%s\\tLB:%s\\tPL:Illumina\\tSM:%s\\tPU:%s"' % (name, name, name, name)
             #read_group = '"@RG\\tID:%s\\tSM:%s\\tLB:%s\\tPL:Illumina"' % (name, name, name)
-            utils.log_pair_end_FASTQ(os.path.join(principal_directory, 'parabricks_input.txt'), 
-                                     os.path.join(docker_input_parabricks, pairs_forward_filename), 
-                                     os.path.join(docker_input_parabricks, pairs_reverse_filename),
-                                     read_group)
+            # utils.log_pair_end_FASTQ(os.path.join(principal_directory, 'parabricks_input.txt'), 
+            #                          os.path.join(docker_input_parabricks, pairs_forward_filename), 
+            #                          os.path.join(docker_input_parabricks, pairs_reverse_filename),
+            #                          read_group)
 
-            utils.thread_print(self.thread_id, "Resync completed succesfully!")
+            self._logger.info("Resync completed succesfully!")
 
             return {"name": name, "pairs_forward": pairs_forward_filename, "pairs_reverse": pairs_reverse_filename}
 
         except Exception as e:
-            utils.thread_print(self.thread_id, "Resync Failed.....!!!")
-            utils.thread_print(self.thread_id, "Exception: %s" % str(e))
+            self._logger.error("Resync Failed.....!!!")
+            self._logger.error("Exception: %s" % str(e))
             sys.exit(1)
 
 
@@ -694,6 +705,7 @@ class ProcessPipe(Pipe):
     """
     
     def process(self, **kwargs):
+        self._logger = logging.getLogger(__name__)
         print("PROGRESS_FLAG:{} - Running quality control ... ".format('10%'), flush=True)
         with multiprocessing.Pool(32) as pool:
             pool.map(self.worker, self.prepare_args(**kwargs))
@@ -709,12 +721,17 @@ class ProcessPipe(Pipe):
                 .assemblePipe(SetSamplesPipe()) \
                     .assemblePipe(PreAlignmentPipe()).start(**kwargs)
 
+        self._logger.info("Finished running quality control and prealignment.")
+
     def prepare_args(self, **kwargs):
         fastq_files = kwargs.pop("fastq_files")
         # You will have to group fastq files into samples again here
         # The worker can also take multiple samples that will be processed sequentially? Let's make the worker take only one sample
         # The multiprocessing.pool will assign the samples. Easier to maintain this way.
         sample_dict = utils.group_samples(fastq_files)
+        self._logger.debug("Finished grouping sample fastqs.")
+        self._logger.debug("Sample dict = {}".format(sample_dict))
+
         l = []
         for sample in sample_dict.values():
             forward = sample["forward"]

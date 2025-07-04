@@ -75,66 +75,75 @@ def test_annotation():
     print(seq1.remove_common_prefix(seq2))
     #print(seq1.find_indel(seq2))
 
+
+def test_spawns():
+    import dir_tree
+    from Pipes.MultipleDiseaseChildSampleHandlerPipe import MultipleDiseaseSampleHandlerPipe
+    dir_tree.build("/home/magi/PROJECT/diagnosys/RESULT/TEST_3_Apr_2025_OCULARE_spawns/", create=False)
+    MultipleDiseaseSampleHandlerPipe().process(dummy_arg = "dummy")
+
 if __name__ == "__main__":
     # TODO: haplotype caller parabricks. merge the two vcfs. merge haplotype caller vcf with deepvariant vcf. then filter according to the bed
+    test_spawns()
+
+
+    # genome = 'hey'
+    # from test_import import *
+    # import testdata
+    # dummy()
+    # #mg_results['out'].to_csv('mygene_results_test.csv', sep='\t')
+    # #gene_DF1 = mg_results['out']
     
-    genome = 'hey'
-    from test_import import *
-    import testdata
-    dummy()
-    #mg_results['out'].to_csv('mygene_results_test.csv', sep='\t')
-    #gene_DF1 = mg_results['out']
-    
-    
-
-    principal_directory = "/home/magi/PROJECT/diagnosys/RESULT/26_Mar_2024_CANCER/"
-    genome_type = 'geno38'
-    panel = 'OCULARE'
-    path = '/home/magi/PROJECT/diagnosys/'
-    
-    arr = [1]
-
-
-    def filter_for_vcf():
-        vertical = pd.read_csv("/home/magi/PROJECT/diagnosys/RESULTS_jurgen/07_Mar_2024_OCULARE/pheno/vertical_281.2024", sep="\t")
-        vertical['filt'] = 1
-        vcf = pd.read_csv("/home/magi/PROJECT/diagnosys/RESULTS_jurgen/07_Mar_2024_OCULARE/temp/281.2024_gatk.vcf", sep='\t', comment='#',
-				names=['#CHROM','POS','ID','REF','ALT','QUAL','FILTER','INFO','FORMAT', "281.2024"])
-        #print(vcf)
-        FILTER = pd.merge(vcf, vertical, on=['#CHROM','POS'], how='left')
-
-        FILTER_ONLY_CDS = FILTER[FILTER['filt']==1]
-        FILTER_INTRONIC = FILTER
-        FILTER_ONLY_CDS.drop('filt', axis=1,inplace=True)
-        FILTER_INTRONIC.drop('filt', axis=1,inplace=True)
-        FILTER_ONLY_CDS['control'] = 0
-
-        FILTER_INNER = pd.merge(vcf, vertical, on=['#CHROM','POS'], how='inner')
-        print(FILTER_ONLY_CDS)
     
 
-    import csv
-    def read_mpileup(sample_name, mpileup_out):
+    # principal_directory = "/home/magi/PROJECT/diagnosys/RESULT/26_Mar_2024_CANCER/"
+    # genome_type = 'geno38'
+    # panel = 'OCULARE'
+    # path = '/home/magi/PROJECT/diagnosys/'
+    
+    # arr = [1]
+
+
+    # def filter_for_vcf():
+    #     vertical = pd.read_csv("/home/magi/PROJECT/diagnosys/RESULTS_jurgen/07_Mar_2024_OCULARE/pheno/vertical_281.2024", sep="\t")
+    #     vertical['filt'] = 1
+    #     vcf = pd.read_csv("/home/magi/PROJECT/diagnosys/RESULTS_jurgen/07_Mar_2024_OCULARE/temp/281.2024_gatk.vcf", sep='\t', comment='#',
+	# 			names=['#CHROM','POS','ID','REF','ALT','QUAL','FILTER','INFO','FORMAT', "281.2024"])
+    #     #print(vcf)
+    #     FILTER = pd.merge(vcf, vertical, on=['#CHROM','POS'], how='left')
+
+    #     FILTER_ONLY_CDS = FILTER[FILTER['filt']==1]
+    #     FILTER_INTRONIC = FILTER
+    #     FILTER_ONLY_CDS.drop('filt', axis=1,inplace=True)
+    #     FILTER_INTRONIC.drop('filt', axis=1,inplace=True)
+    #     FILTER_ONLY_CDS['control'] = 0
+
+    #     FILTER_INNER = pd.merge(vcf, vertical, on=['#CHROM','POS'], how='inner')
+    #     print(FILTER_ONLY_CDS)
+    
+
+    # import csv
+    # def read_mpileup(sample_name, mpileup_out):
         
-        a = pd.read_csv(
-            mpileup_out,
-            sep="\t",
-            header=None,
-            quoting=csv.QUOTE_NONE,
-            encoding="utf-8",
-            low_memory=False,
-            on_bad_lines="skip",
-            names=["CHROM", "POS", "info", "DEPTH", "CALL", "quality"],
-            chunksize=40 * 100024,
-        )
+    #     a = pd.read_csv(
+    #         mpileup_out,
+    #         sep="\t",
+    #         header=None,
+    #         quoting=csv.QUOTE_NONE,
+    #         encoding="utf-8",
+    #         low_memory=False,
+    #         on_bad_lines="skip",
+    #         names=["CHROM", "POS", "info", "DEPTH", "CALL", "quality"],
+    #         chunksize=40 * 100024,
+    #     )
 
-        i = 0
-        for chunk in a:
-            i += 1
-            chunk["sample"] = sample_name
-            print(type(chunk))
+    #     i = 0
+    #     for chunk in a:
+    #         i += 1
+    #         chunk["sample"] = sample_name
+    #         print(type(chunk))
             
-            print(i)
+    #         print(i)
     #filter_for_vcf()
 
     #ParabricksHaplotypeCaller(samples, principal_directory)
@@ -146,7 +155,7 @@ if __name__ == "__main__":
   
     #test_annotation()
 
-    read_mpileup("E530.2019", "/home/magi/PROJECT/diagnosys/RESULTS_jurgen/19_Apr_2024_LYMPHOBESITY/temp/E530.2019_to_count")
+    #read_mpileup("E530.2019", "/home/magi/PROJECT/diagnosys/RESULTS_jurgen/19_Apr_2024_LYMPHOBESITY/temp/E530.2019_to_count")
     
 
 

@@ -35,7 +35,7 @@ import requests
 from requests.structures import CaseInsensitiveDict
 from requests.auth import HTTPBasicAuth
 import json
-
+import logging
 
 from Pipes.Pipe import Pipe
 from Pipes.ParallelPipe import ParallelPipe
@@ -63,13 +63,16 @@ class IndelInterpretationPipe(ParallelPipe):
 
     def process(self, **kwargs):
         self.thread_id = os.getpid()
-
+        self._logger = logging.getLogger(__name__)
+        
         self.sample = kwargs.pop("sample")
         self.panel = kwargs.pop("panel", None)
         self.genome_type = kwargs.pop("genome", "geno38")
         self.dest = kwargs["dest"]
 
+        self._logger.info("Starting IndelInterpretationPipe for sample: {}".format(self.sample.name))
         self.run()
+        self._logger.info("IndelInterpretationPipe for sample: {} finished".format(self.sample.name))
 
         kwargs.update({"sample": self.sample, "panel": self.panel, "genome": self.genome_type, "dest": self.dest})
         return kwargs
@@ -92,9 +95,11 @@ class IndelInterpretationPipe(ParallelPipe):
             print (classification)
 
             verdict=data_df['verdict']
+            self._logger.info("Varsome called successfully!")
             return verdict,classification #SAMPL
         else:
             verdict='Unknown'
+            self._logger.error("Something wrong with quering varsome.")
             return verdict
         
 
@@ -144,10 +149,11 @@ class IndelInterpretationPipe(ParallelPipe):
         
         sample_x = str(self.sample.name)
         name_all = glob.glob(os.path.join(folder_indel, sample_x) + '/*_prefinal_indel.csv')
-        
+        self._logger.debug("Found {} files for sample {}".format(len(name_all), sample_x))
         for file in name_all:
             print("FILE={}".format(file))
             SAMPLE = pd.read_csv(file,sep='\t',header=0)
+            #print(SAMPLE)
             SAMPLE['verdict']=''
             SAMPLENEW = pd.DataFrame()
             if len(SAMPLE)>0:
@@ -187,8 +193,9 @@ class IndelInterpretationPipe(ParallelPipe):
                 #print (SAMPLENEW)
                 SAMPLENEW.fillna(0,inplace=True)
                 SAMPLENEW.to_csv(join(folder_indel,sample_x,sample_x+'_final_indel.csv'),sep='\t',index=None)
-                SAMPLENEW.to_csv(join(path_django,sample_x+'_final_indel.csv'),sep='\t',index=None)
+                self._logger.debug("Wrote to {}".format(join(folder_indel,sample_x,sample_x+'_final_indel.csv')))
+                ##SAMPLENEW.to_csv(join(path_django,sample_x+'_final_indel.csv'),sep='\t',index=None)
                 #system(' '.join(['scp',join(folder_indel,sample_x,sample_x+'_final_indel.csv'), "bioinfo@192.168.1.120:/home/bioinfo/VIRTUAL38/apimagi_prod/NGS_RESULT/INDEL/"]))
                 #system(' '.join(['cp',join(folder_indel,sample_x,sample_x+'_final_indel.csv'), "/home/bioinfo/VIRTUAL38/apimagi_prod/NGS_RESULT/INDEL/"]))
-                system(' '.join(['scp',join(folder_indel,sample_x,sample_x+'_final_indel.csv'), "bioinfo@192.168.1.133:/home/bioinfo/VIRTUAL38/apimagi_prod/NGS_RESULT/INDEL/"]))
+                ##system(' '.join(['scp',join(folder_indel,sample_x,sample_x+'_final_indel.csv'), "bioinfo@192.168.1.133:/home/bioinfo/VIRTUAL38/apimagi_prod/NGS_RESULT/INDEL/"]))
 

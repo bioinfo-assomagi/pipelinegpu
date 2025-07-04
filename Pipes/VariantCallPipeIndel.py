@@ -523,7 +523,7 @@ class VariantCallPipeIndel(ParallelPipe):
             try:
                 shutil.move(bam_path, join(folder_bam,'inanalysis', sample_x))
                 shutil.move(bai_path, join(folder_bam,'inanalysis', sample_x))
-            except: self.thread_print ('errore moving bam files to inanalysis')
+            except Exception as e: self.thread_print ('errore moving bam files to inanalysis: ' + str(e))
 
             self.thread_print('JUST REAL!!!\n')
             ##################################################################

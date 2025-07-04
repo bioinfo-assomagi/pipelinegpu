@@ -6,6 +6,7 @@ import glob
 import dir_tree
 import numpy as np
 from Bio.Seq import Seq
+import utils
 
 class AnnotationPipe(Pipe):
     """
@@ -247,7 +248,7 @@ class AnnotationPipe(Pipe):
                 result['ID'] = np.where(result['variation'].str.contains('rs'),result['variation'],
                                             np.where(result['variation2'].str.contains('rs'),result['variation2'],np.nan))
             except:
-                print ('ERROR IN NP.WHERE!!!!')
+                utils.print('ERROR IN NP.WHERE!!!!', 'error', name = self.__class__.__name__)
                 result['ID'] = np.nan
             result['cosmic'] = result['INFO'].str.split('|').str.get(17).str.split('&').str.get(1)
             result['cosmic'].fillna('',inplace=True)
@@ -255,7 +256,7 @@ class AnnotationPipe(Pipe):
             try:
                 result['variation_cosmic'] = np.where(result['cosmic'].str.contains('COSM'),result['cosmic'],np.nan)
             except:
-                print ('ERROR COSMIC IN NP.WHERE!!!!')
+                utils.print('ERROR COSMIC IN NP.WHERE!!!!', 'error', name = self.__class__.__name__)
                 result['variation_cosmic'] = np.nan
             result['distance'] = result['INFO'].str.split('|').str.get(18)
             result['strand'] = result['INFO'].str.split('|').str.get(19)
@@ -403,12 +404,12 @@ class AnnotationPipe(Pipe):
                 result2['hgmd_function'] = result2['hgmd_y'].str.split('|').str.get(3)
                 result2['hgmd_phenotype'] = result2['hgmd_y'].str.split('|').str.get(4)
                 result2['hgmd_pubmed'] = result2['hgmd_y'].str.split('|').str.get(5)
-            except AttributeError:
+            except AttributeError as e:
                 result2['hgmd_mutation'] = ''
                 result2['hgmd_function'] = ''
                 result2['hgmd_phenotype'] = ''
                 result2['hgmd_pubmed'] = ''
-                print ('AttributeError!!!')
+                utils.print ("AttributeError!!! {} ".format(e), 'error', name = self.__class__.__name__)
 
             result2.drop('hgmd_y',axis=1,inplace=True)
             result2.drop('hgmd_x',axis=1,inplace=True)
@@ -518,11 +519,11 @@ class AnnotationPipe(Pipe):
             result2b['mapquality'] = result2b['mapquality2'].astype(int)
             result2b['GENE'].replace('DFNB31','WHRN',inplace=True)
             result3 = result2b[cols]
-            print ('Annotation CDS len:', len(result3),'->',str(name))
+            utils.thread_print ('Annotation CDS len:' + str(len(result3)) + '->' + str(name), 'info', name = self.__class__.__name__)
 
         else:
             result3 = pd.DataFrame(columns=cols)
-            print ('Annotation CDS len:', len(result3),'->',str(name))
+            utils.thread_print ('Annotation CDS len:' + str(len(result3)) + '->' + str(name), 'info', name = self.__class__.__name__)
 
         return result3
 
@@ -558,13 +559,13 @@ class AnnotationPipe(Pipe):
         sample_phenotype = phenotype[phenotype['sample'].astype(str) == sample_name][['malattia', 'gene']].drop_duplicates()
         #a = phenotype_[['malattia', 'gene']].drop_duplicates()
         
-        x1 = pd.DataFrame(sample_phenotype['gene'])
-        if missing_df is not None:
-            for gene in sample_phenotype['gene']:
-                for index, missing_gene in missing_df.iterrows():
-                    if str(gene) == str(missing_gene.MISSING):
-                        x2 = pd.DataFrame({'gene': pd.Series([str(missing_gene.HGNC_SYMBOL)])})
-                        x1 = x1.append(x2)
+        # x1 = pd.DataFrame(sample_phenotype['gene'])
+        # if missing_df is not None:
+        #     for gene in sample_phenotype['gene']:
+        #         for index, missing_gene in missing_df.iterrows():
+        #             if str(gene) == str(missing_gene.MISSING):
+        #                 x2 = pd.DataFrame({'gene': pd.Series([str(missing_gene.HGNC_SYMBOL)])})
+        #                 x1 = x1.append(x2)
 
         b = CDS
         b['strand'].fillna(1, inplace=True)
@@ -573,7 +574,7 @@ class AnnotationPipe(Pipe):
 
         b['sample'] = sample_name
 
-        print('Len disease annot: ', len(b), '->', sample_name)
+        utils.thread_print('Len disease annot: ' + str(len(b)) + '->' + sample_name, 'info', name = self.__class__.__name__)
 
         return b
 
@@ -595,7 +596,7 @@ class AnnotationPipe(Pipe):
         self.sample.CDS_annot = out_filepath
 
         depth_filtered = self.filter_disease(adapt_annot)
-        print("Wiritng {}_pheno_annot.csv".format(self.sample.name))
+        utils.thread_print("Wiritng {}_pheno_annot.csv".format(self.sample.name), 'info', name = self.__class__.__name__)
         depth_filtered_out = os.path.join(dir_tree.principal_directory.final.path, str(self.sample.name) + "_pheno_annot.csv")
         depth_filtered.to_csv(depth_filtered_out, sep="\t", index=False, encoding='utf-8')
         self.pheno_annot = depth_filtered_out
