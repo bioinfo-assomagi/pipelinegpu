@@ -14,8 +14,8 @@ class ParallelPipe(Pipe):
     def process(self, **kwargs):
         return kwargs
 
-    def thread_print(self, msg):
-        utils.thread_print(self.thread_id, msg)
+    def thread_print(self, msg, name=__name__):
+        utils.thread_print(self.thread_id, msg, name)
 
     def thread_filewrite(self, msg, file_path, mode, lock):
         # The lock is provided by the child

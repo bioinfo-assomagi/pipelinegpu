@@ -37,7 +37,7 @@ class SampleListFam(Pipe):
         samples = [Sample.fromJSON(json_file) for json_file in sample_jsons]
         sample_list = [sample.name for sample in samples]
 
-        print("Building phenotype for samples: {}".format(sample_list))
+        utils.print("Building phenotype for samples: {}".format(sample_list), 'debug')
 
         dbContext = DBContext(db_path)
         accetazione_df = dbContext.get_sample_familiari(sample_list)

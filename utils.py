@@ -128,13 +128,29 @@ def log_pair_end_FASTQ(filename, r1, r2, read_group):
     logger.info("{} {} {}".format(r1, r2, read_group))
 
 
-def thread_print(thread_id, msg):
-    # print(multiprocessing.current_process().name)
-    if thread_id is not None:
-        print("{}THREAD-{}{}: {}".format("\033[91m", thread_id, "\033[0m", msg))
-    else:
-        print(msg)
+def sample_log_justifier(sample_id):
+    return f"[{sample_id}]".ljust(15)
 
+def thread_print(thread_id, msg, name=__name__):
+    # print(multiprocessing.current_process().name)
+    logger = logging.getLogger(name)
+    if thread_id is not None:
+        logger.info("THREAD-{}: {}".format(thread_id, msg))
+    else:
+        logger.info(msg)
+
+def print(msg, type="info", name=__name__):
+    logger = logging.getLogger(name)
+    if type == "info":
+        logger.info(msg)
+    elif type == "warning":
+        logger.warning(msg)
+    elif type == "error":
+        logger.error(msg)
+    elif type == "debug":
+        logger.debug(msg)
+    elif type == "critical":
+        logger.critical(msg)
 
 def group_samples(fastq_files):
 
@@ -142,9 +158,9 @@ def group_samples(fastq_files):
 
     for fastq_file in fastq_files:
         sample_name = fastq_file.split("/")[-1].split("_")[0]
-        print("'\033[95m' Inside group_samples; fastq_file = {} '\033[0m'".format(fastq_file))
-        print("'\033[95m' Sample name = {} '\033[0m'".format(sample_name))
-        print("Sample dict = {}".format(sample_dict))
+        #print("'\033[95m' Inside group_samples; fastq_file = {} '\033[0m'".format(fastq_file))
+        #print("'\033[95m' Sample name = {} '\033[0m'".format(sample_name))
+        #print("Sample dict = {}".format(sample_dict))
         if sample_name not in sample_dict:
             sample_dict[sample_name] = {
                 "name": str(sample_name),
@@ -153,12 +169,12 @@ def group_samples(fastq_files):
             }
 
         if "R1_" in fastq_file.split("/")[-1]:
-            print("Entered: R1 is in the fastq_file")
+            #print("Entered: R1 is in the fastq_file")
             sample_dict[sample_name]["forward"] = fastq_file
         elif "R2_" in fastq_file.split("/")[-1]:
-            print("Entered: R2 is in the fastq_file")
+            #print("Entered: R2 is in the fastq_file")
             sample_dict[sample_name]["reverse"] = fastq_file
-
+            
     return sample_dict
 
 

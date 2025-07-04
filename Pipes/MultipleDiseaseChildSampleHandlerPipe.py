@@ -4,6 +4,8 @@ import utils
 import glob
 import pandas as pd
 import dir_tree
+import logging
+
 from Entities.Sample import Sample
 
 
@@ -11,6 +13,7 @@ from DBContext import DBContext
 from db_repo import DBRepo
 import Pipeline
 from Pipes.Pipe import Pipe
+from pathlib import Path
 
 """ In this pipe, the child samples id are taken. This comes with the new design of the business sytem, as multiple sample_ids (spawned due to the fact that a sample may be tested for multiple diseases),
 are linked with a reference_id (parent sample, or the 'real' sample which will be tested for multiple diseases).
@@ -31,12 +34,13 @@ class MultipleDiseaseSampleHandlerPipe(Pipe):
     def process(self, **kwargs):
 
         print("PROGRESS_FLAG:{} - Running MultipleDiseaseSamplehandler ... ".format('60%'), flush=True)
+        self._logger = logging.getLogger(__name__)
+        self.panel = kwargs['panel']
 
         try:
 
             # 1) Get the samples (parents) you've processed so far and store them into a dict with (key, value) = (sample_name: str, ample: Sample(Object)))
             self.sample_dict = self.init_sample_dict()
-            print(self.sample_dict)
 
             # 2) Search the DB for the spawns of every sample in sample_dict
             spawn_mapping = self.get_spawns_mapping(self.sample_dict.keys())
@@ -106,7 +110,7 @@ class MultipleDiseaseSampleHandlerPipe(Pipe):
             spawn_object = Sample.fromDict(self.sample_dict[parent_id].__dict__)
             spawn_object.name = spawn_id
             spawn_object.saveJSON()
-            print("Spawn_object: id: {}, filepath: {}, name: {}".format(spawn_id, spawn_object.filepath, spawn_object.name))
+            self._logger.debug("Wrote spawn json: {}".format(spawn_object.name))
             self.sample_dict[spawn_id] = spawn_object    
 
     
@@ -127,12 +131,13 @@ class MultipleDiseaseSampleHandlerPipe(Pipe):
         """ Rereading the jsons here again; we should expect the new samples (spawns) to be there. 
         Reading from sample_data redone inside func: `create_phenotype_file` to keep it the function decoupled.
         """
+        # TODO: put it into a seperate pipe
 
         sample_jsons = glob.glob(os.path.join(dir_tree.principal_directory.sample_data.path, "*.json"))
         samples = [Sample.fromJSON(json_file) for json_file in sample_jsons]
         sample_list = [sample.name for sample in samples]
 
-        print("Building phenotype for samples: {}".format(sample_list))
+        self._logger.debug("Building phenotype for samples: {}".format(sample_list))
 
         dbContext = DBContext("dummy_path")
         accetazione_df = dbContext.get_sample_familiari(sample_list)
@@ -140,8 +145,47 @@ class MultipleDiseaseSampleHandlerPipe(Pipe):
 
         phenotype_path = os.path.join(dir_tree.principal_directory.path, 'pheno', 'phenotype')
         pheno = DBContext("dummy_path").get_disease(sample_list) # could also use resynced_sample_list_names
-        pheno.to_csv(phenotype_path, sep='\t', index=False, encoding='utf-8')
+       
+        if pheno.iloc[:,3].isnull().any():
+            self._logger.warning("Null GENES found in phenotype file ... ")
+            self._logger.warning("Dropping the rows with NULL genes ... ")
+            
+            pheno.to_csv(Path(phenotype_path).parent / "phenotype_null_genes.csv", sep='\t', index=False, encoding='utf-8')
+            self._logger.warning("Phenotype with nulls written at {}".format(Path(phenotype_path).parent / "phenotype_null_genes.csv"))
+            
+            pheno = pheno.dropna(subset=['gene'], axis=0, how='all')
+    
+        # Check if all samples are in phenotype, if not, stop, rerun
+        # Group pheno by sample_id and than count and compare the count against sample_list
+        try:
+            pheno_grouped = pheno.groupby("sample")
+        except Exception as e:
+            self._logger.error("Error grouping phenotype by sample_id ... ")
+            self._logger.error(str(e))
+            sys.exit(1)
+
+        if len(pheno_grouped) != len(sample_list):
+            self._logger.error("Not all samples are in phenotype file. Probably some samples had only null genes. ")
+            sys.exit(1)
+
+        # check if any of the samples is in the wrong panel - TODO: for now stop the app; in the future maybe we skip this samples and remove their .json
+        # for sample in sample_list:
+        #     print(sample)
+        #     if pheno[pheno["sample"] == sample]["panel"][0] != self.panel:
+                
+        #         self._logger.error("Sample {} is in the wrong panel ... ".format(sample))
+        #         sys.exit(1)
         
+        #print(pheno.loc[pheno["panel"] != self.panel, "sample"])
+        if (pheno["panel"] != self.panel).any():
+            s = pheno.loc[pheno["panel"] != self.panel, "sample"]
+            val = s.iloc[0]  
+            sample_str = str(val)
+            self._logger.error("Sample {} in the wrong panel, aborting ... ".format(sample_str))
+            sys.exit(1)
+
+        pheno.to_csv(phenotype_path, sep='\t', index=False, encoding='utf-8')
+        self._logger.debug("Phenotype file created at: {}".format(phenotype_path))
     
 
 

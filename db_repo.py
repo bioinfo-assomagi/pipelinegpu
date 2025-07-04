@@ -12,7 +12,9 @@ class DBRepo:
     def get_spawns(self, parent_id):
         sql = "SELECT riferimento as parent, sample as spawn \
                 FROM acept_sample \
-                WHERE sample != riferimento and riferimento = %s"
+                WHERE sample <> riferimento \
+                    AND riferimento = %s \
+                        AND sample ~ ('^' || split_part(riferimento, '.', 1) || '[A-D]\.' || split_part(riferimento, '.', 2) || '$')"
         
         results = self.db.run_query(sql, (str(parent_id), ))
 

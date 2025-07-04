@@ -5,6 +5,14 @@ import os
 import pandas as pd
 import csv
 import glob
+import logging
+
+# silence all of urllib3’s DEBUG logs
+logging.getLogger("urllib3").setLevel(logging.WARNING)
+
+# if you only want to silence the connection‐pool chatter:
+logging.getLogger("urllib3.connectionpool").setLevel(logging.WARNING)
+
 
 import dir_tree
 
@@ -20,7 +28,7 @@ class CoveragePipeTest(Pipe):
         self.sample = kwargs.pop("sample")
         self.sample.temp_dir = os.path.join(dir_tree.principal_directory.temp.path, str(self.sample.name))
         dest = kwargs.pop("dest")
-        
+        self._logger = logging.getLogger(__name__)
         
         input_phenotype = os.path.join(dir_tree.principal_directory.pheno.path, "phenotype")
 
@@ -62,7 +70,7 @@ class CoveragePipeTest(Pipe):
         if _vertical_macro_path is not None:
             self.vertical_macro_df = pd.read_csv(_vertical_macro_path, sep="\t")
         else:
-            print("No vertical_macro for panel {}".format(self.panel))
+            self._logger.debug("No vertical_macro for panel {}".format(self.panel))
             self.vertical_macro_df = None
         self.buchiartificali = utils.get_buchiartificiali()             
         
@@ -113,18 +121,12 @@ class CoveragePipeTest(Pipe):
         for index, chunk in enumerate(mpileup_out_chunks):
             chunk["sample"] = sample_name
             chunk.rename(columns={"CHROM": "#CHROM"}, inplace=True)
-            print("Length of chunk {}: {}".format(index, len(chunk)))
 
-            print(chunk.columns.values)
 
             # INNER JOIN WITH VERTICAL
             chunky_vertical = pd.merge(chunk, self.vertical_df, on=["#CHROM", "POS"], how='inner')
             chunky_verticalX = pd.merge(chunk, self.verticalX_df, on=["#CHROM", "POS"], how='inner')
 
-            
-
-            print("Length of chunky vetical: {}".format(len(chunky_vertical)))
-            print("chunky_vertical :", chunky_vertical)
 
             coverage_vertical = self.count_unbalance_per_filtered_chunk(chunky_vertical)
             coverage_verticalX = self.count_unbalance_per_filtered_chunk(chunky_verticalX)
@@ -175,34 +177,39 @@ class CoveragePipeTest(Pipe):
         for key, value in read_base_patterns.items():
             data.append(filtered_chunk["CALL"].str.count(value).rename(key))
         
-        print("Filtered chunk columns: {}".format(filtered_chunk.columns.values.tolist()))
         coverage_counts = pd.concat(data, axis=1)
-        print("coverage_counts columns: {}".format(coverage_counts.columns.values.tolist()))
+
         coverage_counts['sum'] = coverage_counts[[".", ",", "C", "G", "T", "A", "ins", "del"]].sum(axis = 1)
         df = pd.concat([filtered_chunk[["#CHROM", "POS", "DEPTH", "CALL", "GENE", "exone", "length", "strand", "refseq", "hgmd"]], coverage_counts], axis = 1) # chunk contains the columns from mpileup (POS, DEPTH, C, G, etc.), as well as those from vertical (GENE, exone, length, refseq, etc.)
     
         df = df[["#CHROM", "POS", "DEPTH", "C", "G", "T", "A", "ins", "del", "sum", 'GENE',
                                 'exone','length','strand','refseq','hgmd']]
         
-        df["DEPTH"].fillna(0, inplace=True)
-        df["sum"].fillna(0, inplace=True)
-        df["sum"] = df["sum"].astype(int)
-        df["POS"] = df["POS"].astype(int)
-        df["DEPTH"] = df["DEPTH"].astype(int)
+        df[["DEPTH", "sum"]] = df[["DEPTH", "sum"]].fillna(0)
+        df = df.astype({
+            "sum":   "int64",
+            "POS":   "int64",
+            "DEPTH": "int64",
+        })
         df["selection"] = 1
         
-        df["C%"] = df["C"].astype(float) / df["sum"].astype(float)
-        df["G%"] = df["G"].astype(float) / df["sum"].astype(float)
-        df["T%"] = df["T"].astype(float) / df["sum"].astype(float)
-        df["A%"] = df["A"].astype(float) / df["sum"].astype(float)
-        df["ins%"] = df["ins"].astype(float) / df["sum"].astype(float)
-        df["del%"] = df["del"].astype(float) / df["sum"].astype(float)
-        df["C%"] = df["C%"].map("{:,.3f}".format)
-        df["G%"] = df["G%"].map("{:,.3f}".format)
-        df["T%"] = df["T%"].map("{:,.3f}".format)
-        df["A%"] = df["A%"].map("{:,.3f}".format)
-        df["ins%"] = df["ins%"].map("{:,.3f}".format)
-        df["del%"] = df["del%"].map("{:,.3f}".format)
+
+        for col in ["C", "G", "T", "A", "ins", "del"]:
+            pct = (df[col].astype(float) / df["sum"]).round(3)
+            df[f"{col}%"] = pct.map("{:.3f}".format)
+
+        # df["C%"] = df["C"].astype(float) / df["sum"].astype(float)
+        # df["G%"] = df["G"].astype(float) / df["sum"].astype(float)
+        # df["T%"] = df["T"].astype(float) / df["sum"].astype(float)
+        # df["A%"] = df["A"].astype(float) / df["sum"].astype(float)
+        # df["ins%"] = df["ins"].astype(float) / df["sum"].astype(float)
+        # df["del%"] = df["del"].astype(float) / df["sum"].astype(float)
+        # df["C%"] = df["C%"].map("{:,.3f}".format)
+        # df["G%"] = df["G%"].map("{:,.3f}".format)
+        # df["T%"] = df["T%"].map("{:,.3f}".format)
+        # df["A%"] = df["A%"].map("{:,.3f}".format)
+        # df["ins%"] = df["ins%"].map("{:,.3f}".format)
+        # df["del%"] = df["del%"].map("{:,.3f}".format)
 
         # df['sum'] = df['sum'].astype(int)
         # df['POS'] = df['POS'].astype(int)
@@ -277,7 +284,7 @@ class CoveragePipeTest(Pipe):
         x2= pd.DataFrame({'GENE':pd.Series(['CTD-3074O7.11','TM4SF2'])})
         x = x1._append(x2)
         FILTER = vertical[vertical['GENE'].isin(x['GENE'])] # so merge two times with the vertical? NOTE: error on merging is thrown here. #CHROM seems to be different type between the two dataframes.
-        print("Colnames of Vertical = {}".format(FILTER.columns.values.tolist()))
+        #print("Colnames of Vertical = {}".format(FILTER.columns.values.tolist()))
         b = pd.merge(COUNT,FILTER,on=['#CHROM','POS'],how='right')
         for index,row in buchiartificiali.iterrows():
             x = row['#CHROM']
@@ -301,8 +308,8 @@ class CoveragePipeTest(Pipe):
         COUNT['sample'] = sample_name
         COUNT.fillna(0,inplace=True)
         COUNT.drop(['filt'], axis=1,inplace=True)
-        print (len(COUNT))
-        print ('Sequence: ',len(COUNT))
+        #print (len(COUNT))
+
 
 
         cov = len(COUNT[COUNT['DEPTH'] >= 10])
@@ -323,12 +330,13 @@ class CoveragePipeTest(Pipe):
         not_marked.to_csv(result_not_marked,sep='\t',index=False)
         COUNT.to_csv(result,sep='\t',index=False)
 
-        print( 'Len COV > 10: ',cov)
-        print ('Len BUCHI: ',len(buchi))
-        try: print ('% Sequence COVERED: ', '{:,.1f}'.format(float(cov)/float(tot)*100),'%')
-        except ZeroDivisionError: print (0)
+        self._logger.debug('Len COV > 10: ' + str(cov))
+        self._logger.debug('% Sequence COVERED: ' + '{:,.1f}'.format(float(cov)/float(tot)*100) + '%')
+        
+        try: self._logger.debug('% Sequence COVERED: ' + '{:,.1f}'.format(float(cov)/float(tot)*100) + '%')
+        except ZeroDivisionError: self._logger.debug (0, 'debug', name="CoveragePipeTest") 
 
-        print ('Len disease: ',len(COUNT))
+        self._logger.debug ('Len disease: ' + str(len(COUNT)))
 
 
     def summary_macroarea(self):
@@ -423,12 +431,12 @@ class CoveragePipeTest(Pipe):
         not_marked.to_csv(result_not_marked,sep='\t',index=False)
         b.to_csv(result,sep='\t',index=False)
 
-        print ('Len BUCHI: ',len(buchi))
+        self._logger.debug ('Len BUCHI: ' + str(len(buchi)))
         try: 
-            print ('% Sequence COVERED: ', '{:,.1f}'.format(float(len(marked))/float(tot_length)*100),'%')
-        except ZeroDivisionError: print (0)
+            self._logger.debug ('% Sequence COVERED: ' + '{:,.1f}'.format(float(len(marked))/float(tot_length)*100) + '%')
+        except ZeroDivisionError: self._logger.debug (0)
 
-        print ('Len disease: ',len(b))
+        self._logger.debug ('Len disease: ' + str(len(b)))
 
 
     def summary_sex(self, count_sex):
@@ -436,7 +444,7 @@ class CoveragePipeTest(Pipe):
         coverage_dir = dir_tree.principal_directory.coverage.path
         sample_dir = str(self.sample.name)
         
-        print("Sending {}_finalsex to coverage dir ...".format(str(self.sample.name)))
+        # utils.print("Sending {}_finalsex to coverage dir ...".format(str(self.sample.name)), 'debug', name="CoveragePipeTest")
         count_sex.to_csv(os.path.join(coverage_dir, sample_dir, "{}_final_sex".format(str(self.sample.name))), sep="\t", index=False)
     
 

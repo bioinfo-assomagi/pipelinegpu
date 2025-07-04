@@ -44,6 +44,10 @@ class VariantCallPipe():
         # 2) split & merge SNP/INDEL
         self._split_variants(samples)
 
+
+        self.vcf_quality_filter(samples, self.principal_directory)
+        self.strand_bias_filter(samples)
+
         # aggiorna kwargs
         kwargs.update({
             'principal_directory': self.principal_directory,
@@ -73,12 +77,12 @@ class VariantCallPipe():
                                 '--ref', "{}/{}".format(config.DOCKER_REFDIR, config.REF_GENOME_NAME),
                                 "--in-bam", os.path.join(docker_input_parabricks, bam_filename),
                                 '--haplotypecaller-options', '"-A StrandBiasBySample -A DepthPerAlleleBySample"',
-                                '--out-variants', "{}/{}_pb_gatk.vcf".format(config.DOCKER_OUTPUTDIR, sample_name)])
+                                '--out-variants', "{}/{}_pb_gatk_raw.vcf".format(config.DOCKER_OUTPUTDIR, sample_name)])
             
             if os.system(command) != 0:
                 raise Exception("Haplotypecaller failed!")
 
-            sample.vcf_path_haplotypecaller = "{}/{}_pb_gatk.vcf".format(os.path.join(self.principal_directory, "temp"), sample_name)
+            sample.vcf_path_haplotypecaller_raw = "{}/{}_pb_gatk_raw.vcf".format(os.path.join(self.principal_directory, "temp"), sample_name)
             sample.saveJSON()
             
     def DeepVariant(self, samples):
@@ -117,7 +121,7 @@ class VariantCallPipe():
 
         for sample in samples:
             base = sample.name
-            hap_vcf = sample.vcf_path_haplotypecaller
+            hap_vcf = sample.vcf_path_haplotypecaller_raw
             dv_vcf = sample.vcf_path_deepvariant
 
             # HaplotypeCaller SNP/INDEL
@@ -150,3 +154,82 @@ class VariantCallPipe():
             # sample.vcf_dv_snp = dv_snp
             # sample.vcf_dv_indel = dv_indel
             sample.saveJSON()
+
+
+    def vcf_quality_filter(self, samples, principal_directory):
+         for sample in samples:
+            # sample = str(sample_obj.name)
+            temp_dir = os.path.join(principal_directory, 'temp')
+            os.makedirs(temp_dir, exist_ok=True)
+            ref_fa = os.path.join(config.REF, config.REF_GENOME_NAME)
+
+            # Input VCFs from HaplotypeCaller split
+            snp_vcf = getattr(sample, 'vcf_hap_snp', None)
+            indel_vcf = getattr(sample, 'vcf_hap_indel', None)
+            if not snp_vcf or not os.path.exists(snp_vcf):
+                raise FileNotFoundError(f"SNP VCF not found for sample {sample.name}: {snp_vcf}")
+            if not indel_vcf or not os.path.exists(indel_vcf):
+                raise FileNotFoundError(f"INDEL VCF not found for sample {sample.name}: {indel_vcf}")
+
+            # Filtration for SNP
+            snp_filtered = os.path.join(temp_dir, f"{sample.name}_hap_snp.filtered.vcf")
+            cmd_filt_snp = [
+                config.GATK, 'VariantFiltration',
+                '-R', ref_fa,
+                '-V', snp_vcf,
+                '-O', snp_filtered,
+                '--filter-name', 'LowQD', '--filter-expression', 'QD < 2.0',
+                '--filter-name', 'LowQUAL', '--filter-expression', 'QUAL < 30.0',
+                '--filter-name', 'HighSOR', '--filter-expression', 'SOR > 3.0',
+                '--filter-name', 'HighFS', '--filter-expression', 'FS > 60.0',
+                '--filter-name', 'LowMQ', '--filter-expression', 'MQ < 40.0',
+                '--filter-name', 'LowMQRankSum', '--filter-expression', 'MQRankSum < -12.5',
+                '--filter-name', 'LowReadPosRankSum', '--filter-expression', 'ReadPosRankSum < -8.0'
+            ]
+            subprocess.run(cmd_filt_snp, check=True)
+            sample.vcf_hap_snp_filtered = snp_filtered
+
+            # Filtration for INDEL
+            indel_filtered = os.path.join(temp_dir, f"{sample.name}_hap_indel.filtered.vcf")
+            cmd_filt_indel = [
+                config.GATK, 'VariantFiltration',
+                '-R', ref_fa,
+                '-V', indel_vcf,
+                '-O', indel_filtered,
+                '--filter-name', 'LowQD', '--filter-expression', 'QD < 2.0',
+                '--filter-name', 'LowQUAL', '--filter-expression', 'QUAL < 30.0',
+                '--filter-name', 'HighFS', '--filter-expression', 'FS > 200.0',
+                '--filter-name', 'LowReadPosRankSum', '--filter-expression', 'ReadPosRankSum < -20.0'
+            ]
+            subprocess.run(cmd_filt_indel, check=True)
+            sample.vcf_hap_indel_filtered = indel_filtered
+
+            # Merge filtered SNP and INDEL into single VCF
+            vcf_dir = os.path.join(principal_directory, 'vcf')
+            os.makedirs(vcf_dir, exist_ok=True)
+            merged_vcf = os.path.join(vcf_dir, f"{sample.name}_qualityfilter_gatk.vcf")
+            cmd_merge = [
+                config.GATK, 'MergeVcfs',
+                '-I', snp_filtered,
+                '-I', indel_filtered,
+                '-O', merged_vcf
+            ]
+            subprocess.run(cmd_merge, check=True)
+            sample.vcf_quality_filtered = merged_vcf
+            sample.saveJSON()
+
+
+    def strand_bias_filter(self, samples):
+        """ THis is a prefilter of the outputted vcfs from the gatk_filter pipe, removing variants with strand bias.
+        Actually, the HighSOR variants are written into a seperate vcf which will be later used for exclusive join with the main
+        vcf file. """
+        for sample in samples:
+            vcf_quality_filtered = sample.vcf_quality_filtered
+            df = pd.read_csv(vcf_quality_filtered, sep='\t', comment='#', names=['#CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO', 'FORMAT', str(sample.name)])
+            df_filtered = df[~df["FILTER"].str.contains('HighSOR', na=False)]
+            sample.vcf_path_haplotypecaller = "{}/{}_pb_gatk.vcf".format(os.path.join(self.principal_directory, "temp"), sample.name)
+
+            
+            df_filtered.to_csv(sample.vcf_path_haplotypecaller, sep='\t', index=False)
+            sample.saveJSON()
+        

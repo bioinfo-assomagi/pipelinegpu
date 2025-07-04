@@ -6,6 +6,7 @@ import utils
 import shutil
 from DBContext import DBContext
 import dir_tree
+import logging
 
 
 """ Initiation of the project organization structure. The name of the results directory will be constructed, and be searched for its existence. Additionally,
@@ -103,6 +104,7 @@ class Setup(Pipe):
     
 
         #TODO: add logging 
+        self._logger = logging.getLogger(__name__)
 
         principal_directory = self.create_principal_directory(path, proj_name, over, panel) # TODO: maybe not a good idea to keep principal_directory (as well as dir_tree) global.
         download_folder = self.create_downloadfolders(principal_directory, dest)
@@ -111,7 +113,7 @@ class Setup(Pipe):
         config.update(upd_config_params)
 
         dir_tree.build(principal_directory)
-        print("Principal directory set at: {}".format(dir_tree.principal_directory.path))
+        self._logger.info("Principal directory set at: \033[4m\033[94m\033[1m {} \033[0m".format(dir_tree.principal_directory.path))
         #print(dir_tree.principal_directory)
 
         #TODO: create the phenotype file here
