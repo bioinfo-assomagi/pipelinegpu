@@ -151,7 +151,7 @@ if __name__ == "__main__":
     handler = logging.StreamHandler(sys.stdout)
     handler.setFormatter(ColorFormatter())
     root = logging.getLogger()
-    root.setLevel(logging.DEBUG)
+    root.setLevel(logging.INFO)
     root.addHandler(handler)
     
     print("Currently unavailable. Coming back soon ... ")

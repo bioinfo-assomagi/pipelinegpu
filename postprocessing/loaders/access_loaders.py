@@ -2,7 +2,7 @@ import pandas as pd
 import psycopg2
 from psycopg2.extras import RealDictCursor 
 from sqlalchemy import create_engine
-
+import os
 
 
 def load_campioni_accettazione():
@@ -18,6 +18,10 @@ def load_campioni_accettazione():
     engine = create_engine(
         "postgresql+psycopg2://bioinfo:password_sicura@192.168.1.143:5432/postgres"
     )
+
+    # engine = create_engine(
+    #     create_engine(os.getenv("DB_CONNECTION_STRING"))
+    # )
 
     SQL = """
             SELECT

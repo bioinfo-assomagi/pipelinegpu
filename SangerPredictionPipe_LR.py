@@ -19,6 +19,7 @@ from sklearn.preprocessing import PolynomialFeatures
 from sklearn.model_selection import train_test_split, cross_val_score, KFold
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 from sklearn.pipeline import Pipeline
+from datetime import datetime
 
 def load_and_preprocess_data(csv_path):
     df = pd.read_csv(csv_path, header=0)
@@ -71,7 +72,7 @@ def plot_confusion_matrix(model, data):
     plt.tight_layout()
     plt.show()
 
-def plot_probability_contours(model, data, save_path="/home/alessandro/PROJECT/SKLEARN/probability_contours.png"):
+def plot_probability_contours(model, data, save_path="/home/magi/PROJECT/diagnosys/bin_jurgen/nosanger/probability_contours.png"):
     qual_seq = np.linspace(data['qual'].min(), data['qual'].max(), 100)
     depth_seq = np.linspace(data['depth'].min(), data['depth'].max(), 100)
     
@@ -104,7 +105,7 @@ def plot_probability_contours(model, data, save_path="/home/alessandro/PROJECT/S
     
     plt.show()
 
-def threshold_predictions(model, data, p_threshold=0.9):
+def threshold_predictions(model, data, p_threshold=0.8):
     
     X_full = model.named_steps['poly'].transform(data[['qual', 'depth']].values)    # Trasforma le feature del dataset usando lo step 'poly' della pipeline
     pred_probs_full = model.named_steps['logistic'].predict_proba(X_full)[:, 1]     # Calcola le probabilità usando la regressione logistica
@@ -116,13 +117,14 @@ def threshold_predictions(model, data, p_threshold=0.9):
     print(cm_threshold)
 
 def main():
-    csv_path = "/home/alessandro/PROJECT/SKLEARN/SKLEARN.csv"
+    csv_path = "/home/magi/PROJECT/diagnosys/bin_jurgen/nosanger/SKLEARN.csv"
     data = load_and_preprocess_data(csv_path)                                       # Carica e preprocessa i dati
     pipeline_model = create_and_train_pipeline(data)                                # Crea ed addestra la pipeline
     plot_confusion_matrix(pipeline_model, data)                                     # Visualizza la matrice di confusione sui dati interi
     plot_probability_contours(pipeline_model, data)                                 # Visualizza la mappa a contorni delle probabilità predette
-    threshold_predictions(pipeline_model, data, p_threshold=0.9)                    # Calcola le predizioni utilizzando una soglia custom e visualizza la matrice di confusione
-    model_output_path = "/home/alessandro/PROJECT/SKLEARN/logistic_model.pkl"
+    threshold_predictions(pipeline_model, data, p_threshold=0.8)                    # Calcola le predizioni utilizzando una soglia custom e visualizza la matrice di confusione
+    datetimenow = datetime.now().strftime("%Y%m%d_%H%M%S")
+    model_output_path = f"/home/magi/PROJECT/diagnosys/bin_jurgen/nosanger/{datetimenow}logistic_model.pkl"
     joblib.dump(pipeline_model, model_output_path)
 
     print("Modello salvato in:", model_output_path)

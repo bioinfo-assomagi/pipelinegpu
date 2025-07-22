@@ -101,14 +101,11 @@ class PipelineAssembler():
             #                                                 .assemblePipe(EndPipe())
             #return Pipeline(Setup()).assemblePipe(ResyncDBPipe()).assemblePipe(ReadFastQFilesPipe()).assemblePipe(ProcessPipe()).assemblePipe(SampleListFam()).assemblePipe(EndPipe())
             #return Pipeline(Setup()).assemblePipe(ResyncDBPipe()).assemblePipe(ReadFastQFilesPipe()).assemblePipe(ProcessPipe()).assemblePipe(SampleListFam()).assemblePipe(Fq2BamPipe()).assemblePipe(CoverageWrapperPipe()).assemblePipe(VariantCallPipe()).assemblePipe(CoverageStatisticsWrapperPipe()).assemblePipe(VariantFilterWrapperPipe()).assemblePipe(EndPipe())
-            # return Pipeline(Setup()).assemblePipe(VariantCallPipe()) \
-            #                                             .assemblePipe(MultipleDiseaseSampleHandlerPipe()) \
-            #                                                 .assemblePipe(CoverageWrapperPipe()) \
-            #                                                     .assemblePipe(CoverageStatisticsWrapperPipe()) \
-            #                                                         .assemblePipe(VariantFilterWrapperPipe()) \
-            #                                                             .assemblePipe(IndelWrapperPipe()) \
-            #                                                                 .assemblePipe(EndPipe())
-            return Pipeline(Setup()).assemblePipe(IndelWrapperPipe()).assemblePipe(EndPipe())
+            return Pipeline(Setup()).assemblePipe(CoverageWrapperPipe()) \
+                                                                .assemblePipe(CoverageStatisticsWrapperPipe()) \
+                                                                        .assemblePipe(IndelWrapperPipe()) \
+                                                                            .assemblePipe(EndPipe())
+            #return Pipeline(Setup()).assemblePipe(IndelWrapperPipe()).assemblePipe(EndPipe())
         elif pipeline_type == "main":
             # NOTE: right now all of the following are here due to testing
             #return Pipeline(Setup()).assemblePipe(ResyncDBPipe()).assemblePipe(ReadFastQFilesPipe()).assemblePipe(ProcessPipe()).assemblePipe(SampleListFam()).assemblePipe(Fq2BamPipe()).assemblePipe(VariantCallPipe()).assemblePipe(CoverageWrapperPipe()).assemblePipe(VariantFilterWrapperPipe()).assemblePipe(CoverageStatisticsWrapperPipe()).assemblePipe(IndelWrapperPipe()).assemblePipe(EndPipe())
