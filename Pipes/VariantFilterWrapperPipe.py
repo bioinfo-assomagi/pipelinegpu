@@ -32,7 +32,10 @@ class VariantFilterWrapperPipe(Pipe):
         # as a Pipeline itself, that will lead to multiple Pipelines being launched in parallel.
         #Pipeline(VariantFilterPipe()).start(**kwargs)
         #Pipeline(VariantFilterPipe()).assemblePipe(AnnotationPipe()).assemblePipe(SangerPredictionPipe()).start(**kwargs)
+        
         Pipeline(VariantFilterPipe()).assemblePipe(KinshipPipe()).assemblePipe(AnnotationPipe()).assemblePipe(SangerPredictionPipe()).start(**kwargs)
+        
+        #Pipeline(VariantFilterPipe()).assemblePipe(AnnotationPipe()).assemblePipe(SangerPredictionPipe()).start(**kwargs)
         #Pipeline(VcfQualityFilter()).assemblePipe(VariantFilterPipe()).assemblePipe(KinshipPipe()).assemblePipe(AnnotationPipe()).assemblePipe(SangerPredictionPipe()).start(**kwargs)
 
     def prepare_args(self, **kwargs):

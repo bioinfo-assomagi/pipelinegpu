@@ -181,8 +181,9 @@ class MultipleDiseaseSampleHandlerPipe(Pipe):
             s = pheno.loc[pheno["panel"] != self.panel, "sample"]
             val = s.iloc[0]  
             sample_str = str(val)
-            self._logger.error("Sample {} in the wrong panel, aborting ... ".format(sample_str))
-            sys.exit(1)
+            self._logger.error("Sample {} in the wrong panel, will not abort, but be cautious ... ".format(sample_str))
+
+            #sys.exit(1)
 
         pheno.to_csv(phenotype_path, sep='\t', index=False, encoding='utf-8')
         self._logger.debug("Phenotype file created at: {}".format(phenotype_path))

@@ -14,6 +14,7 @@ from dotenv import load_dotenv
 from pathlib import Path
 import logging
 import sys
+import shutil
 from ..LogFormatter import ColorFormatter
 
 
@@ -124,6 +125,30 @@ def stage(in_dir):
     dest = Path(os.environ["STAGING_PATH"])
     run_transport(Path(in_dir), dest)
 
+
+# ─── CLEAN SUBGROUP ───────────────────────────────────────────────────────
+@cli.group()
+def clean():
+    """Clean up."""
+    pass
+
+@clean.command("stage")
+def clean_stage():
+    """Clean up staging area."""
+    dest = Path(os.environ["STAGING_PATH"])
+    if not dest.is_dir():
+        raise NotADirectoryError(f"{dest!r} is not a directory")
+    
+    for item in dest.iterdir():
+        if item.is_dir():
+            shutil.rmtree(item)
+        else:
+            item.unlink()
+
+@clean.command("backup")
+def clean_backup():
+    """Clean up backup area."""
+    pass
 
 if __name__ == "__main__":
     cli()

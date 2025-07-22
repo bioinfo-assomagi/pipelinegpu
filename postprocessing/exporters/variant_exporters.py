@@ -6,6 +6,7 @@ from psycopg2.extras import execute_values
 from ...db.stored_procedures import reset_for_new_run as reset_for_new_run_proc, upsert_preselection as upsert_preselection_proc, insert_sanger_allvariation as insert_sanger_allvariation_proc
 import csv
 import math
+
 import glob
 import logging
 import sys

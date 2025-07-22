@@ -85,7 +85,7 @@ class VariantCallPipeIndel(ParallelPipe):
         # -controlsDir /home/magi/PROJECT/diagnosys/bin/COVSTAMP/convading/CANCER/PCA
         # -outputDir /home/magi/PROJECT/diagnosys/bin/COVSTAMP/convading/CANCER/NEWENTRY
         # -bed /home/magi/PROJECT/diagnosys/bin/COVSTAMP/convading/CANCER/BED/bed_CANCER_TWIST91957849.bed
-        bashCommand0=(' '.join(['CoNVaDING.pl -mode StartWithBam','-inputDir',join(folder_bam,'inanalysis', sample_x),
+        bashCommand0=(' '.join(['perl /home/magi/PROJECT/diagnosys/bin/CoNVaDING.pl -mode StartWithBam','-inputDir',join(folder_bam,'inanalysis', sample_x),
                         '-useSampleAsControl',
                         '-controlsDir',PCA_folder,
                         '-outputDir',PCA_NEW,

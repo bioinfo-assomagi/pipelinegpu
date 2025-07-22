@@ -361,7 +361,7 @@ def push_to_db(sample_df):
                 [(sid,) for sid in ids]
             )
         conn.commit()
-        logger.info(f"[Sample {ids}]: push_to_db successeded!")
+        logger.info(f"[Sample {ids}]: push_to_db succeded!")
 
     except DatabaseError as e:
         raise(e)
